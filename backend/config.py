@@ -30,6 +30,10 @@ class Settings:
         )
         self.stale_after_s: int = int(os.getenv("MD_STALE_AFTER_S", "180"))
         self.active_user_window_m: int = int(os.getenv("MD_ACTIVE_USER_WINDOW_M", "15"))
+        self.bcrypt_rounds: int = int(os.getenv("MD_BCRYPT_ROUNDS", "12"))
+        self.session_max_age_s: int = int(os.getenv("MD_SESSION_MAX_AGE_S", "86400"))
+        self.rate_limit_max_attempts: int = int(os.getenv("MD_RATE_LIMIT_MAX_ATTEMPTS", "5"))
+        self.rate_limit_window_s: int = int(os.getenv("MD_RATE_LIMIT_WINDOW_S", "300"))
 
         # Security check: warn on default secret
         if self.secret_key == DEFAULT_SECRET_KEY:
