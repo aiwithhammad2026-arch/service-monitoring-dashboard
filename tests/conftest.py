@@ -22,7 +22,7 @@ def app_with_db(tmp_path: Path):
     settings.bcrypt_rounds = 4  # Lower rounds only in tests for execution speed
 
     seed(db_file)
-    app = create_app()
+    app = create_app(use_lifespan=False)  # Disable simulator in tests
 
     yield app
 

@@ -1,5 +1,6 @@
 """Main FastAPI application factory for Service Monitoring Dashboard."""
 
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -11,16 +12,31 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import settings
 from backend.errors import register_error_handlers
 from backend.routes.auth import router as auth_router
+from backend.simulator import simulator
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 
-def create_app(extra_routers: list[APIRouter] | None = None) -> FastAPI:
+@asynccontextmanager
+async def _lifespan(app: FastAPI):  # noqa: ARG001
+    """Start and stop the background simulator around the ASGI lifespan."""
+    await simulator.start()
+    try:
+        yield
+    finally:
+        await simulator.stop()
+
+
+def create_app(
+    extra_routers: list[APIRouter] | None = None,
+    use_lifespan: bool = True,
+) -> FastAPI:
     """Create and configure the FastAPI application instance."""
     app = FastAPI(
         title="Service Monitoring Dashboard",
         description="Operations dashboard with service health, metrics, and incident simulation.",
         version="0.1.0",
+        lifespan=_lifespan if use_lifespan else None,
     )
 
     # 1. Register uniform error handlers returning {"error": {"code", "message"}}

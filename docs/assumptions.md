@@ -43,3 +43,41 @@ Evaluated over the recent 3-minute bucket window in strict priority order:
 - All internal dates, storage timestamps, and calculations operate in **UTC ISO-8601**.
 - Minute buckets are floored to the minute boundary (`YYYY-MM-DDTHH:MM:00Z`).
 - Functions accept an injected `now` parameter to ensure 100% deterministic testing.
+
+## 5. Deterministic Traffic Simulator
+
+### RNG Keying
+- Each bucket is generated with `random.Random(f"{seed}:{service_id}:{bucket_start}")`.
+- The same `(seed, service_id, bucket_start)` triple always produces identical requests, errors, and histogram — regardless of wall-clock time or insertion order.
+- Different seeds, services, or minutes produce different data (collision probability negligible).
+
+### Mode Profiles
+| Mode | ~Error Rate | Latency Profile |
+|------|-------------|-----------------|
+| `normal` | ~2% (1.5–2.5%) | p50 ≈120ms, p95 ≈270ms |
+| `slow` | ~2% | p50 ≈720ms, p95 ≈1600ms (latency ×6 via shifted histogram weights) |
+| `failing` | ~40% (38–42%) | Same latency as normal |
+| `recovering` | Linear blend 40%→2% over 300s | Linear histogram blend slow→normal |
+
+### Recovering Auto-Switch
+- After 300 seconds of elapsed time since `mode_since`, the simulator automatically sets `mode = 'normal'` in `sim_state`. No manual intervention required.
+
+### Pause vs Reporting-Pause Distinction
+- **`paused=1`**: Service sends zero-request buckets (`requests=0, errors=0`, empty histogram). This models a service that is intentionally offline but still reporting its silence. Status → gray ("No data" due to zero traffic).
+- **`reporting_paused=1`**: No bucket is written at all. Data goes stale after `stale_after_s`. Status → gray ("Stale"). This models a service that has lost observability (e.g. log pipeline failure, sidecar crash).
+
+### Synthetic User Touching
+- Each tick selects `randint(20, 35)` user IDs from the 200 seeded `app_users` using `random.Random(f"{seed}:users:{bucket_start}")`.
+- Updates `last_seen_at = now` for those IDs, moving the "active users" KPI visibly.
+- Different bucket_starts touch different user subsets (deterministic but varied).
+
+### Async Loop Architecture
+- `tick(conn, now, seed)` is a **pure synchronous function** fully testable without `asyncio`.
+- `SimulatorService._loop()` is a thin async wrapper that calls `tick` via `asyncio.to_thread` every `MD_SIM_TICK` seconds (default 5s).
+- Any exception in a tick is logged and the loop continues — a single bad tick never kills the service.
+- `MD_SIM_ENABLED=0` disables the entire loop before it starts.
+
+### Scenario File (Optional)
+- `MD_SIM_SCENARIO` path points to a JSON file describing time-offset events (e.g. minute 5: set `payments` to `failing`; minute 12: `recovering`).
+- Not implemented in initial release; the hook point is documented in `simulator.py` for Task 06+.
+
