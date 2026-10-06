@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Production-style Operations Monitoring Dashboard providing service health, metrics, incident management and deterministic simulation.">
+  <title>PulseOps — Service Monitoring Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/vendor/chart.umd.js" defer></script>
+  <script type="module" src="/js/app.js" defer></script>
+</head>
+<body>
+  <div id="app" class="app-layout">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">⚡</span>
+        <h1 class="brand-title">PulseOps</h1>
+      </div>
+      <div class="header-status" id="system-status-indicator">
+        <span class="status-dot status-dot-healthy" aria-hidden="true"></span>
+        <span class="status-label">System Operational</span>
+      </div>
+    </header>
+
+    <main id="main-content" class="app-main" tabindex="-1">
+      <section class="welcome-card">
+        <h2>Operations Monitoring Dashboard</h2>
+        <p>Foundation initialized. Service monitoring, metrics engine, and live telemetry active.</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

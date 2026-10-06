@@ -1,0 +1,36 @@
+# Python & Virtual Environments
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+
+# SQLite Databases (including WAL and SHM files)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Linters & Tooling
+.ruff_cache/
+
+# Agent & Task Tracking (Local Only)
+.agent-state.md
+.agent-tasks/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
