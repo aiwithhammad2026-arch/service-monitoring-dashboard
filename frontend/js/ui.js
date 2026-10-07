@@ -57,10 +57,12 @@ export function showToast({ title = "", msg, type = "info", durationMs = 4000 } 
   }, durationMs);
 }
 
-/* ── Modal ─────────────────────────────────────────────────────────── */
+/* ── Modal with Focus Trap & Keyboard Navigation ─────────────────── */
+let _lastFocusedElement = null;
+let _modalKeydownHandler = null;
 
 /**
- * Open the global modal.
+ * Open the global modal with focus trap and keyboard control.
  * @param {{ title: string, body: Node|string, footer?: Node }}
  */
 export function openModal({ title, body, footer = null } = {}) {
@@ -69,6 +71,8 @@ export function openModal({ title, body, footer = null } = {}) {
   const bodyEl  = document.getElementById("modal-body");
   const footerEl= document.getElementById("modal-footer");
   if (!overlay) return;
+
+  _lastFocusedElement = document.activeElement;
 
   titleEl.textContent = title;
   bodyEl.textContent = "";
@@ -87,34 +91,122 @@ export function openModal({ title, body, footer = null } = {}) {
   }
 
   overlay.classList.remove("hidden");
-  overlay.focus();
+
+  // Focus trap listener
+  if (_modalKeydownHandler) {
+    document.removeEventListener("keydown", _modalKeydownHandler);
+  }
+
+  _modalKeydownHandler = (e) => {
+    if (overlay.classList.contains("hidden")) return;
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeModal();
+      return;
+    }
+
+    if (e.key === "Tab") {
+      const focusable = overlay.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  document.addEventListener("keydown", _modalKeydownHandler);
+
+  // Set initial focus inside modal
+  setTimeout(() => {
+    const firstFocusable = overlay.querySelector(
+      'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (firstFocusable) {
+      firstFocusable.focus();
+    } else {
+      overlay.focus();
+    }
+  }, 30);
 }
 
-/** Close the global modal. */
+/** Close the global modal and restore focus. */
 export function closeModal() {
   const overlay = document.getElementById("modal-overlay");
-  if (overlay) overlay.classList.add("hidden");
+  if (overlay) {
+    overlay.classList.add("hidden");
+  }
+  if (_modalKeydownHandler) {
+    document.removeEventListener("keydown", _modalKeydownHandler);
+    _modalKeydownHandler = null;
+  }
+  if (_lastFocusedElement && typeof _lastFocusedElement.focus === "function") {
+    _lastFocusedElement.focus();
+    _lastFocusedElement = null;
+  }
 }
 
 /* ── Status badge ──────────────────────────────────────────────────── */
 
 const STATUS_META = {
-  healthy:  { icon: "✔", label: "Healthy",  cls: "status-badge--healthy"  },
-  slow:     { icon: "⚠", label: "Slow",     cls: "status-badge--slow"     },
-  failing:  { icon: "✖", label: "Failing",  cls: "status-badge--failing"  },
-  stale:    { icon: "◌", label: "Stale",    cls: "status-badge--stale"    },
-  "no-data":{ icon: "◌", label: "No data",  cls: "status-badge--no-data"  },
+  healthy:  { icon: "✔", label: "Healthy",  cls: "status-badge--healthy",  title: "Healthy — telemetry normal and reporting" },
+  slow:     { icon: "⚠", label: "Slow",     cls: "status-badge--slow",     title: "Slow — service is actively reporting high latency breach" },
+  failing:  { icon: "✖", label: "Failing",  cls: "status-badge--failing",  title: "Failing — service is actively reporting error rate breach" },
+  stale:    { icon: "◌", label: "Stale",    cls: "status-badge--stale",    title: "Stale — telemetry reporting has stopped (>180s)" },
+  "no-data":{ icon: "◌", label: "No data",  cls: "status-badge--no-data",  title: "No data — zero traffic reported" },
+  green:    { icon: "✔", label: "Healthy",  cls: "status-badge--healthy",  title: "Healthy — telemetry normal and reporting" },
+  red:      { icon: "✖", label: "Failing",  cls: "status-badge--failing",  title: "Failing — service is actively reporting errors" },
+  gray:     { icon: "◌", label: "Stale",    cls: "status-badge--stale",    title: "Stale / Missing — telemetry not reporting" },
 };
 
 /**
  * Create a status badge element (color + icon + text, always).
- * @param {"healthy"|"slow"|"failing"|"stale"|"no-data"} status
+ * Distinguishes failing (red, still reporting) vs stale/missing (gray, not reporting).
+ *
+ * @param {"healthy"|"slow"|"failing"|"stale"|"no-data"|"green"|"red"|"gray"} status
+ * @param {string} [customLabel]
  * @returns {HTMLElement}
  */
-export function makeStatusBadge(status) {
-  const meta = STATUS_META[status] ?? STATUS_META["no-data"];
+export function makeStatusBadge(status, customLabel = "") {
+  let key = String(status).toLowerCase();
+  let labelText = customLabel;
+
+  if (key === "red") {
+    if (customLabel.toLowerCase() === "slow") {
+      key = "slow";
+    } else {
+      key = "failing";
+    }
+  } else if (key === "gray") {
+    if (customLabel.toLowerCase() === "no data") {
+      key = "no-data";
+    } else {
+      key = "stale";
+    }
+  } else if (key === "green") {
+    key = "healthy";
+  }
+
+  const meta = STATUS_META[key] ?? STATUS_META["no-data"];
+  const finalLabel = labelText || meta.label;
+
   const el = document.createElement("span");
   el.className = `status-badge ${meta.cls}`;
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-label", `Status: ${finalLabel}`);
+  el.title = meta.title;
 
   const icon = document.createElement("span");
   icon.className = "status-icon";
@@ -122,7 +214,7 @@ export function makeStatusBadge(status) {
   icon.textContent = meta.icon;
 
   const label = document.createElement("span");
-  label.textContent = meta.label;
+  label.textContent = finalLabel;
 
   el.appendChild(icon);
   el.appendChild(label);
@@ -138,6 +230,7 @@ export function makeStatusBadge(status) {
 export function makeSkeleton(extraClass = "") {
   const el = document.createElement("div");
   el.className = `skeleton skeleton-text ${extraClass}`.trim();
+  el.setAttribute("aria-hidden", "true");
   return el;
 }
 
@@ -177,6 +270,8 @@ export function makeEmptyState({ icon = "◌", title, msg = "" } = {}) {
 export function makeErrorState({ msg = "Something went wrong.", onRetry = null } = {}) {
   const wrap = document.createElement("div");
   wrap.className = "error-state";
+  wrap.setAttribute("role", "alert");
+  wrap.setAttribute("aria-live", "assertive");
 
   const icon = document.createElement("div");
   icon.className = "error-state-icon";
@@ -197,8 +292,9 @@ export function makeErrorState({ msg = "Something went wrong.", onRetry = null }
 
   if (typeof onRetry === "function") {
     const btn = document.createElement("button");
-    btn.className = "btn btn-secondary";
+    btn.className = "btn btn-secondary mt-3";
     btn.textContent = "Retry";
+    btn.setAttribute("aria-label", "Retry loading");
     btn.addEventListener("click", onRetry);
     wrap.appendChild(btn);
   }
@@ -213,11 +309,16 @@ export function makeErrorState({ msg = "Something went wrong.", onRetry = null }
 export function makeStaleBanner(minutesOld) {
   const el = document.createElement("div");
   el.className = "stale-banner";
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-live", "polite");
+
   const icon = document.createElement("span");
   icon.setAttribute("aria-hidden", "true");
   icon.textContent = "⚠";
+
   const text = document.createElement("span");
-  text.textContent = `Data is ${minutesOld} minute${minutesOld !== 1 ? "s" : ""} old`;
+  text.textContent = `Data is ${minutesOld} minute${minutesOld !== 1 ? "s" : ""} old (telemetry not reporting)`;
+
   el.appendChild(icon);
   el.appendChild(text);
   return el;

@@ -75,12 +75,14 @@ export function renderAudit(container) {
   metricsExportLink.href = "/export/metrics.csv";
   metricsExportLink.download = "metrics.csv";
   metricsExportLink.className = "btn btn-secondary";
+  metricsExportLink.setAttribute("aria-label", "Download metrics as CSV file");
   metricsExportLink.textContent = "⬇ Download Metrics CSV";
 
   const incidentsExportLink = document.createElement("a");
   incidentsExportLink.href = "/export/incidents.csv";
   incidentsExportLink.download = "incidents.csv";
   incidentsExportLink.className = "btn btn-secondary";
+  incidentsExportLink.setAttribute("aria-label", "Download incidents as CSV file");
   incidentsExportLink.textContent = "⬇ Download Incidents CSV";
 
   exportBtnRow.appendChild(metricsExportLink);

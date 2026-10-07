@@ -40,13 +40,27 @@ let _incidentPollTimer = null;
   const sidebar  = document.getElementById("sidebar");
   const backdrop = _makeBackdrop(sidebar);
   if (menuBtn && sidebar) {
+    const closeSidebar = () => {
+      sidebar.classList.remove("open");
+      menuBtn.setAttribute("aria-expanded", "false");
+    };
+
     menuBtn.addEventListener("click", () => {
       const open = sidebar.classList.toggle("open");
       menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) {
+        const firstLink = sidebar.querySelector("a");
+        if (firstLink) firstLink.focus();
+      }
     });
-    backdrop.addEventListener("click", () => {
-      sidebar.classList.remove("open");
-      menuBtn.setAttribute("aria-expanded", "false");
+
+    backdrop.addEventListener("click", closeSidebar);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && sidebar.classList.contains("open")) {
+        closeSidebar();
+        menuBtn.focus();
+      }
     });
   }
 

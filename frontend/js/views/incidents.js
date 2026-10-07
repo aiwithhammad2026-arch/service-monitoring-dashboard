@@ -189,7 +189,7 @@ export function renderIncidents(container) {
           : inc.status === "recovered"
           ? "stale"
           : "healthy";
-      statusTd.appendChild(makeStatusBadge(badgeType));
+      statusTd.appendChild(makeStatusBadge(badgeType, inc.status.toUpperCase()));
       row.appendChild(statusTd);
 
       // Healthy streak

@@ -118,7 +118,7 @@ export function renderServiceDetail(serviceId, container) {
     titleBlock.appendChild(h1);
     titleBlock.appendChild(meta);
 
-    const badge = makeStatusBadge(svc.status);
+    const badge = makeStatusBadge(svc.status, svc.status_label);
     topRow.appendChild(titleBlock);
     topRow.appendChild(badge);
     headerCard.appendChild(topRow);
@@ -135,6 +135,7 @@ export function renderServiceDetail(serviceId, container) {
     explanation.className = "mt-4 p-3 rounded text-sm";
     explanation.style.background = "var(--surface-2)";
     explanation.style.border = "1px solid var(--border)";
+    explanation.setAttribute("role", "status");
 
     const expText = document.createElement("span");
     expText.className = "font-bold";

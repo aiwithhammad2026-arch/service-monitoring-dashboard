@@ -147,7 +147,7 @@ export function renderSimulator(container) {
 
       // Health
       const healthTd = document.createElement("td");
-      healthTd.appendChild(makeStatusBadge(svc.status));
+      healthTd.appendChild(makeStatusBadge(svc.status, svc.status_label));
       row.appendChild(healthTd);
 
       // Sim Mode
@@ -193,6 +193,7 @@ export function renderSimulator(container) {
       select.style.fontSize = "var(--text-xs)";
       select.style.minHeight = "unset";
       select.style.width = "auto";
+      select.setAttribute("aria-label", `Select simulator mode for ${svc.name}`);
       ["normal", "slow", "failing", "recovering"].forEach((m) => {
         const opt = document.createElement("option");
         opt.value = m;
@@ -207,6 +208,7 @@ export function renderSimulator(container) {
       applyBtn.style.minHeight = "unset";
       applyBtn.style.fontSize = "var(--text-xs)";
       applyBtn.textContent = "Set";
+      applyBtn.setAttribute("aria-label", `Apply simulator mode for ${svc.name}`);
       applyBtn.addEventListener("click", async () => {
         setButtonLoading(applyBtn, true);
         try {
@@ -227,6 +229,7 @@ export function renderSimulator(container) {
       tToggle.style.minHeight = "unset";
       tToggle.style.fontSize = "var(--text-xs)";
       tToggle.textContent = sim?.paused ? "Resume Traffic" : "Pause Traffic";
+      tToggle.setAttribute("aria-label", `${sim?.paused ? "Resume" : "Pause"} traffic for ${svc.name}`);
       tToggle.addEventListener("click", async () => {
         setButtonLoading(tToggle, true);
         try {
@@ -248,6 +251,7 @@ export function renderSimulator(container) {
       rToggle.style.minHeight = "unset";
       rToggle.style.fontSize = "var(--text-xs)";
       rToggle.textContent = sim?.reporting_paused ? "Resume Rep." : "Pause Rep.";
+      rToggle.setAttribute("aria-label", `${sim?.reporting_paused ? "Resume" : "Pause"} reporting for ${svc.name}`);
       rToggle.addEventListener("click", async () => {
         setButtonLoading(rToggle, true);
         try {

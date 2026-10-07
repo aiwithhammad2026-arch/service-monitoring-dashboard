@@ -233,7 +233,7 @@ export function renderServices(container) {
 
       // Status Badge
       const statusTd = document.createElement("td");
-      statusTd.appendChild(makeStatusBadge(svc.status));
+      statusTd.appendChild(makeStatusBadge(svc.status, svc.status_label));
       row.appendChild(statusTd);
 
       // Req / min

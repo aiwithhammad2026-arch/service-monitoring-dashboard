@@ -418,6 +418,11 @@ export function renderDashboard(container) {
     const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
     const textColor = isDark ? "#8fa3bf" : "#5a6e84";
 
+    const totalReqs = points.reduce((sum, p) => sum + (p.requests || 0), 0);
+    const totalErrs = points.reduce((sum, p) => sum + (p.errors || 0), 0);
+    reqCanvas.setAttribute("aria-label", `Line chart of requests and errors over time. Total requests: ${totalReqs}, Total errors: ${totalErrs}.`);
+    latCanvas.setAttribute("aria-label", `Line chart of latency percentiles over ${points.length} minute intervals.`);
+
     // 1. Requests and Errors Chart
     const reqCtx = reqCanvas.getContext("2d");
     _reqChart = new window.Chart(reqCtx, {
@@ -534,7 +539,7 @@ export function renderDashboard(container) {
       nameBlock.appendChild(nameEl);
       nameBlock.appendChild(prodEl);
 
-      const badge = makeStatusBadge(svc.status);
+      const badge = makeStatusBadge(svc.status, svc.status_label);
       top.appendChild(nameBlock);
       top.appendChild(badge);
 

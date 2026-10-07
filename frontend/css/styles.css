@@ -1,6 +1,6 @@
 /* ==========================================================================
    Service Monitoring Dashboard Design System — styles.css
-   Stack: vanilla CSS, CSS custom properties, no framework, no CDN
+   Stack: vanilla CSS, CSS custom properties, no framework, local assets
    ========================================================================== */
 
 /* ── 1. Tokens ─────────────────────────────────────────────────────────── */
@@ -1370,12 +1370,61 @@ tbody td {
   .toast {
     max-width: 100%;
   }
+
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-box {
+    max-width: 100%;
+    width: 100%;
+    max-height: 85svh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    margin: 0;
+  }
 }
 
-/* ── 28. Responsive — large screens ──────────────────────────────── */
+/* ── 28. Responsive — narrow mobile (< 480 px) ────────────────────── */
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar .form-select,
+  .filter-bar input[type="search"],
+  .filter-bar input,
+  .filter-bar .btn {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .service-card-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 29. Responsive — large screens ──────────────────────────────── */
 @media (min-width: 1280px) {
   .kpi-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── 30. Reduced Motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
