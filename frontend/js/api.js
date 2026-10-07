@@ -1,5 +1,5 @@
 /**
- * api.js — Fetch wrapper for PulseOps
+ * api.js — Fetch wrapper for Service Monitoring Dashboard
  *
  * Rules enforced here:
  *  - Sends X-Requested-With on every request.
@@ -8,7 +8,7 @@
  *  - Maps 401 → triggers login redirect, 403 → "Admins only" message,
  *    429 → rate-limit toast, network failures → error.
  *  - Supports automatic retry with linear back-off.
- *  - Never uses innerHTML; callers receive parsed data or throw.
+ *  - DOM manipulation prohibited here; callers receive parsed data or throw.
  */
 
 /** Per-view-key sequence counters for response ordering. */
@@ -21,7 +21,7 @@ let _on401 = () => {};
 export function setOn401Handler(fn) { _on401 = fn; }
 
 /**
- * Fetch JSON from the PulseOps API.
+ * Fetch JSON from the Service Monitoring Dashboard API.
  *
  * @param {string}  url
  * @param {object}  [opts]                   - fetch options

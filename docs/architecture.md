@@ -1,7 +1,7 @@
-# Architecture Overview — Service Monitoring Dashboard (PulseOps)
+# Architecture Overview — Service Monitoring Dashboard
 
 ## System Overview
-PulseOps is a standalone operations monitoring dashboard built for a fictional platform with three products: Website, App, and Admin Console.
+Service Monitoring Dashboard is a standalone operations monitoring dashboard built for a fictional platform with three products: Website, App, and Admin Console.
 
 ## Core Components
 - **Backend:** FastAPI, Uvicorn, SQLite in WAL mode with plain SQL migrations.

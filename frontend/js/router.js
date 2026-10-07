@@ -1,5 +1,5 @@
 /**
- * router.js — Minimal hash-based router for PulseOps.
+ * router.js — Minimal hash-based router for Service Monitoring Dashboard.
  *
  * Routes are registered as { pattern: RegExp, view: () => Promise<void> }.
  * Navigating calls history.replaceState on the same hash and renders the view.

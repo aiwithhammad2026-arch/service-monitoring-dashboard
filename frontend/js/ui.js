@@ -1,7 +1,7 @@
 /**
- * ui.js — DOM helper utilities for PulseOps.
+ * ui.js — DOM helper utilities for Service Monitoring Dashboard.
  *
- * All data must be set via textContent or DOM APIs — never innerHTML.
+ * All data must be set via textContent or DOM APIs.
  */
 
 /* ── Toast ──────────────────────────────────────────────────────────── */
@@ -11,7 +11,7 @@ const TOAST_ICONS = {
   error:   "✖",
   warning: "⚠",
   info:    "ℹ",
-};
+}; // icons for Service Monitoring Dashboard notifications
 
 /**
  * Show a toast notification.

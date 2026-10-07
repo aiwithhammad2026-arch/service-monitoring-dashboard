@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PulseOps Design System — styles.css
+   Service Monitoring Dashboard Design System — styles.css
    Stack: vanilla CSS, CSS custom properties, no framework, no CDN
    ========================================================================== */
 
@@ -65,20 +65,20 @@
 
   --text:       #e8edf5;
   --text-2:     #8fa3bf;
-  --text-muted: #566880;
+  --text-muted: #7a92ad;  /* was #566880 — lifted to meet 4.5:1 on #0a0e1a */
 
-  --accent:       #4f8ef7;
-  --accent-hover: #3a7af0;
-  --accent-dim:   rgba(79, 142, 247, 0.15);
+  --accent:       #1a3e90;  /* darkened accent for white text contrast >4.5 */
+  --accent-hover: #152f70;
+  --accent-dim:   rgba(26, 62, 144, 0.15);
 
   /* Status */
   --green:      #22c55e;
   --green-dim:  rgba(34, 197, 94, 0.14);
-  --red:        #f43f5e;
-  --red-dim:    rgba(244, 63, 94, 0.14);
+  --red:        #fb7185;  /* was #f43f5e — adjusted for >=4.5:1 on red-dim */
+  --red-dim:    rgba(251, 113, 133, 0.14);
   --yellow:     #f59e0b;
   --yellow-dim: rgba(245, 158, 11, 0.14);
-  --gray:       #64748b;
+  --gray:       #8fa3bf;  /* was #64748b — lifted to meet 4.5:1 on dark surface */
   --gray-dim:   rgba(100, 116, 139, 0.14);
 
   /* Danger / warning aliases */
@@ -102,19 +102,19 @@
 
   --text:       #0d1520;
   --text-2:     #4a5b72;
-  --text-muted: #8fa3bf;
+  --text-muted: #5a6e84;  /* was #8fa3bf — darkened to meet 4.5:1 on light bg */
 
   --accent:       #2563eb;
   --accent-hover: #1d4ed8;
   --accent-dim:   rgba(37, 99, 235, 0.10);
 
-  --green:      #16a34a;
-  --green-dim:  rgba(22, 163, 74, 0.10);
-  --red:        #e11d48;
-  --red-dim:    rgba(225, 29, 72, 0.10);
-  --yellow:     #d97706;
-  --yellow-dim: rgba(217, 119, 6, 0.10);
-  --gray:       #6b7280;
+  --green:      #166534;  /* was #16a34a — darkened to meet 4.5:1 on #fff surface */
+  --green-dim:  rgba(22, 101, 52, 0.12);
+  --red:        #9f1239;  /* was #e11d48 — darkened to meet 4.5:1 on #fff surface */
+  --red-dim:    rgba(159, 18, 57, 0.12);
+  --yellow:     #92400e;  /* was #d97706 — darkened to meet 4.5:1 on #fff surface */
+  --yellow-dim: rgba(146, 64, 14, 0.12);
+  --gray:       #374151;  /* was #6b7280 — darkened to meet 4.5:1 on #fff surface */
   --gray-dim:   rgba(107, 114, 128, 0.10);
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
@@ -135,18 +135,18 @@
     --border-strong: #b8c4d6;
     --text:       #0d1520;
     --text-2:     #4a5b72;
-    --text-muted: #8fa3bf;
+    --text-muted: #5a6e84;
     --accent:       #2563eb;
     --accent-hover: #1d4ed8;
     --accent-dim:   rgba(37, 99, 235, 0.10);
-    --green:      #16a34a;
-    --green-dim:  rgba(22, 163, 74, 0.10);
-    --red:        #e11d48;
-    --red-dim:    rgba(225, 29, 72, 0.10);
-    --yellow:     #d97706;
-    --yellow-dim: rgba(217, 119, 6, 0.10);
-    --gray:       #6b7280;
-    --gray-dim:   rgba(107, 114, 128, 0.10);
+    --green:      #166534;
+    --green-dim:  rgba(22, 101, 52, 0.12);
+    --red:        #9f1239;
+    --red-dim:    rgba(159, 18, 57, 0.12);
+    --yellow:     #92400e;
+    --yellow-dim: rgba(146, 64, 14, 0.12);
+    --gray:       #374151;
+    --gray-dim:   rgba(55, 65, 81, 0.10);
   }
 }
 

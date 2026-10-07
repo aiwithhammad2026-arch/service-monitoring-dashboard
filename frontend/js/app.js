@@ -1,14 +1,14 @@
 /**
- * app.js — PulseOps entry point
+ * app.js — Service Monitoring Dashboard entry point
  *
  * Responsibilities:
  *  1. Boot: call /auth/me to check session.
  *  2. If unauthenticated → render login view.
  *  3. If authenticated → build sidebar, wire theme toggle, start router,
- *     poll incident badge every 30 s.
- *  4. Theme saved in localStorage under key "pulseops.theme".
+ *     poll incident badge every 10 s.
+ *  4. Theme saved in localStorage under key "md.theme".
  *  5. Polls pause when tab is hidden (visibilitychange).
- *  6. All DOM mutations use textContent / DOM APIs — no innerHTML.
+ *  6. All DOM mutations use textContent / DOM APIs.
  */
 
 import { apiGet, apiPost, setOn401Handler, ApiError } from "./api.js";
@@ -78,8 +78,12 @@ let _incidentPollTimer = null;
 
 /* ── Theme ─────────────────────────────────────────────────────────── */
 function _initTheme() {
-  const saved = localStorage.getItem("pulseops.theme");
-  const theme = saved ?? "dark";
+  const saved = localStorage.getItem("md.theme");
+  let theme = saved;
+  if (!theme) {
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    theme = prefersDark ? "dark" : "light";
+  }
   document.documentElement.setAttribute("data-theme", theme);
   _updateThemeIcons(theme);
 
@@ -94,7 +98,7 @@ function _toggleTheme() {
   const current = document.documentElement.getAttribute("data-theme") ?? "dark";
   const next = current === "dark" ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
-  localStorage.setItem("pulseops.theme", next);
+  localStorage.setItem("md.theme", next);
   _updateThemeIcons(next);
 }
 
@@ -129,7 +133,7 @@ export function renderLogin(presetError = "") {
   const brand = document.createElement("div");
   brand.className = "login-brand";
   const accent = document.createElement("span");
-  accent.textContent = "⚡ PulseOps";
+  accent.textContent = "⚡ Service Monitoring Dashboard";
   brand.appendChild(accent);
 
   const subtitle = document.createElement("p");
@@ -317,12 +321,14 @@ function _highlightNav() {
 }
 
 /* ── Incident badge poll ────────────────────────────────────────────── */
+let _isPollingBadge = false;
+
 function _startIncidentPoll() {
   _pollIncidentBadge();
   _incidentPollTimer = setInterval(() => {
     if (document.visibilityState === "hidden") return;
     _pollIncidentBadge();
-  }, 30_000);
+  }, 10_000);
 }
 
 function _stopIncidentPoll() {
@@ -331,12 +337,17 @@ function _stopIncidentPoll() {
 }
 
 async function _pollIncidentBadge() {
+  if (_isPollingBadge) return;
+  _isPollingBadge = true;
   try {
-    // GET /incidents?status=open&limit=1 — just need the count.
+    // GET /incidents?status=open&limit=100 — just need the count.
     const data = await apiGet("/incidents?status=open&limit=100", { viewKey: "incident-badge" });
     const count = Array.isArray(data?.items) ? data.items.length : 0;
     _updateIncidentBadge(count);
   } catch (_) { /* non-critical */ }
+  finally {
+    _isPollingBadge = false;
+  }
 }
 
 function _updateIncidentBadge(count) {

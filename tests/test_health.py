@@ -18,5 +18,5 @@ def test_frontend_static_serving(client: TestClient) -> None:
     """GET / must return the frontend HTML document."""
     response = client.get("/")
     assert response.status_code == 200
-    assert "PulseOps" in response.text
+    assert "Service Monitoring Dashboard" in response.text
     assert "<!DOCTYPE html>" in response.text
