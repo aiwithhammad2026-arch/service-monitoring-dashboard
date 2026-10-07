@@ -106,4 +106,61 @@ Evaluated over the recent 3-minute bucket window in strict priority order:
 - Immutable audit log records administrative changes: logins, threshold changes, simulator toggles, incident acknowledgement, resolution, and notes.
 - Automatic recursive credential redaction: any field key containing `password`, `token`, `secret`, `cookie`, `session`, `auth`, or `authorization` (case-insensitive, at any nesting level in dicts/lists) is replaced with `"[REDACTED]"`.
 
+## 7. REST API Layer, Authorization, and CSV Export (Task 07)
+
+### Route Specification & RBAC
+| Method | Route | Minimum Role | Purpose |
+|---|---|---|---|
+| `GET` | `/health` | Public | System liveness and environment status |
+| `POST` | `/auth/login` | Public | Session creation with bcrypt verification |
+| `POST` | `/auth/logout` | Public | Session termination and cookie deletion |
+| `GET` | `/auth/me` | Viewer+ | Current authenticated user identity |
+| `GET` | `/metrics/overview` | Viewer+ | High-level dashboard KPI summary cards |
+| `GET` | `/metrics/history` | Viewer+ | Minute-by-minute continuous chart time series |
+| `GET` | `/services` | Viewer+ | Paginated service status list with RPM and p95 |
+| `GET` | `/services/{id}` | Viewer+ | Service detail, status, thresholds, and sim state |
+| `PUT` | `/services/{id}/thresholds` | Admin | Update monitoring thresholds (audit logged) |
+| `POST` | `/sim/{id}/mode` | Admin | Simulator traffic mode change (`mode_since` recorded) |
+| `POST` | `/sim/{id}/pause` | Admin | Traffic pause toggle (writes zero-traffic buckets) |
+| `POST` | `/sim/{id}/reporting` | Admin | Telemetry reporting pause (causes stale transition) |
+| `GET` | `/incidents` | Viewer+ | Paginated incident list filtered by status |
+| `GET` | `/incidents/{id}` | Viewer+ | Incident detail and event timeline |
+| `POST` | `/incidents/{id}/ack` | Admin | Acknowledge incident (`open` → `acknowledged`) |
+| `POST` | `/incidents/{id}/resolve` | Admin | Resolve incident (`*` → `resolved`) |
+| `GET` | `/audit` | Admin | Paginated audit log records |
+| `GET` | `/export/metrics.csv` | Viewer+ | Safe CSV export of metric buckets |
+| `GET` | `/export/incidents.csv` | Viewer+ | Safe CSV export of incidents |
+
+### Allow-lists & Validation Rules
+- **Range (`range`):** Allowed values: `15m`, `1h`, `6h`, `24h`. Anything else returns `422 VALIDATION_ERROR`.
+- **Product (`product`):** Allowed values: `all`, `website`, `app`, `admin_console`. Returns `422` if invalid.
+- **Service Status (`status`):** Allowed values: `all`, `green`, `red`, `gray`. Returns `422` if invalid.
+- **Simulator Mode (`mode`):** Allowed values: `normal`, `slow`, `failing`, `recovering`. Returns `422` if invalid.
+- **Incident Status (`status`):** Allowed values: `all`, `open`, `acknowledged`, `recovered`, `resolved`. Returns `422` if invalid.
+- **Pagination:** `page >= 1` (returns `422` if `< 1`). `page_size >= 1`, automatically clamped at maximum `100` (`page_size=1000` is safely clamped to `100`).
+- **Threshold Ranges:**
+  - `max_error_pct`: `0.0` to `100.0`
+  - `max_p95_ms`: `1.0` to `60000.0` (milliseconds)
+  - `stale_after_s`: `30` to `3600` (seconds)
+  - Out-of-bounds values (e.g. 150%, -5%, or 0 ms) return `422 VALIDATION_ERROR`.
+
+### Uniform Error Format
+All errors (400, 401, 403, 404, 409, 422, 429, 500) strictly adhere to:
+```json
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable description"
+  }
+}
+```
+- **401 Unauthorized:** Missing or expired session cookie (`code: "UNAUTHORIZED"`).
+- **403 Forbidden:** Authenticated user lacks required role (`code: "FORBIDDEN"`) or missing `X-Requested-With` header on mutating requests (`code: "CSRF_FAILED"`).
+- **404 Not Found:** Resource not found (`code: "NOT_FOUND"`).
+- **409 Conflict:** Invalid state machine transition (`code: "CONFLICT"`).
+- **422 Validation Error:** Malformed payload or out-of-range parameter (`code: "VALIDATION_ERROR"`).
+
+### CSV Formula Injection Defense
+CSV exports stream with `Content-Disposition: attachment; filename="..."` and encode values safely. Any cell whose first character is `=`, `+`, `-`, `@`, `\t`, or `\r` is automatically prefixed with a single quote (`'`), neutralizing dynamic formula execution in spreadsheet software while preserving human readability.
+
 

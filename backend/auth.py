@@ -21,6 +21,13 @@ COOKIE_NAME = "md_session"
 DUMMY_BCRYPT_HASH = "$2b$12$e80M6uFvDgn40aH9pL7z..z1v87v980o5N194x02uC2f4yM0yqUu2"
 
 
+def get_client_ip(request: Request) -> str:
+    """Extract client IP address safely from request."""
+    if request.client and request.client.host:
+        return request.client.host
+    return "127.0.0.1"
+
+
 def hash_password(plain_password: str) -> str:
     """Hash password using bcrypt with configured cost (default 12)."""
     return bcrypt.hashpw(

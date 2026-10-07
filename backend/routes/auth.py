@@ -11,6 +11,7 @@ from backend.auth import (
     DUMMY_BCRYPT_HASH,
     create_session_token,
     decode_session_token,
+    get_client_ip,
     get_current_user,
     login_rate_limiter,
     verify_password,
@@ -27,13 +28,6 @@ class LoginRequest(BaseModel):
 
     username: str = Field(..., min_length=1, max_length=64)
     password: str = Field(..., min_length=1, max_length=128)
-
-
-def get_client_ip(request: Request) -> str:
-    """Extract client IP address safely from request."""
-    if request.client and request.client.host:
-        return request.client.host
-    return "127.0.0.1"
 
 
 @router.post("/login")

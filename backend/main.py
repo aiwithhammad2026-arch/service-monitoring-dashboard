@@ -11,7 +11,13 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
 from backend.errors import register_error_handlers
+from backend.routes.audit import router as audit_router
 from backend.routes.auth import router as auth_router
+from backend.routes.export import router as export_router
+from backend.routes.incidents import router as incidents_router
+from backend.routes.metrics import router as metrics_router
+from backend.routes.services import router as services_router
+from backend.routes.sim import router as sim_router
 from backend.simulator import simulator
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
@@ -71,8 +77,14 @@ def create_app(
             "environment": "development" if is_dev else "production",
         }
 
-    # 4. Authentication API Router
+    # 4. API Routers
     app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+    app.include_router(metrics_router, prefix="/metrics", tags=["Metrics"])
+    app.include_router(services_router, prefix="/services", tags=["Services"])
+    app.include_router(sim_router, prefix="/sim", tags=["Simulator"])
+    app.include_router(incidents_router, prefix="/incidents", tags=["Incidents"])
+    app.include_router(audit_router, prefix="/audit", tags=["Audit"])
+    app.include_router(export_router, prefix="/export", tags=["Export"])
 
     # 5. Optional extra routers (e.g. test-only route harness)
     if extra_routers:
