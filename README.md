@@ -105,6 +105,10 @@ uv run pytest --cov=backend
 
 Open your browser at `http://127.0.0.1:8000/` to access the application.
 
+### Adding a New Service
+
+To add a new service, append its tuple to `SERVICES_CATALOG` in `backend/seed.py` (applied migrations are never edited). An existing database picks the new service up by re-running `uv run python -m backend.seed`. Update the two tests that assume exactly 10 services: `tests/test_api.py::test_pagination_and_clamping` and `tests/test_db_and_seed.py::test_seed_twice_does_not_duplicate_rows`.
+
 ---
 
 ## Demo Accounts

@@ -19,7 +19,7 @@
 - **Demo Walkthrough Video:** Screen recording following `docs/demo-script.md` must be recorded separately by an operator.
 ### Where to Edit for Likely Review Changes
 - **Active-User Window:** `backend/config.py` (`Settings.active_user_window_m`), `backend/metrics.py` (`overview`), `tests/test_metrics.py`.
-- **Add New Service:** `backend/seed.py` (`SERVICES_CATALOG`), `backend/migrations/001_init.sql`, `tests/test_db_and_seed.py`.
+- **Add New Service:** Add to `backend/seed.py` (`SERVICES_CATALOG`); re-run `uv run python -m backend.seed` (applied migrations are never edited). Pinning tests: `tests/test_api.py::test_pagination_and_clamping` & `tests/test_db_and_seed.py::test_seed_twice_does_not_duplicate_rows`.
 - **Default Thresholds:** `backend/seed.py` (`seed()`), `backend/config.py` (`Settings.stale_after_s`), `backend/status.py`.
 - **New Status Filter:** `backend/routes/services.py` (`ALLOWED_STATUSES`), `frontend/js/views/services.js` (`renderTable`), `tests/test_api.py`.
 - **Add Degraded Status:** `backend/status.py` (`evaluate_service_status`, `breaches`), `frontend/js/ui.js` (`makeStatusBadge`), `frontend/css/styles.css`.
