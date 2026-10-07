@@ -79,5 +79,31 @@ Evaluated over the recent 3-minute bucket window in strict priority order:
 
 ### Scenario File (Optional)
 - `MD_SIM_SCENARIO` path points to a JSON file describing time-offset events (e.g. minute 5: set `payments` to `failing`; minute 12: `recovering`).
-- Not implemented in initial release; the hook point is documented in `simulator.py` for Task 06+.
+- Hook point is documented in `simulator.py`.
+
+## 6. Incident State Machine and Audit Logging (Task 06)
+
+### Incident Types and Deduplication
+- **Types:** `error_rate`, `latency`, `stale`.
+- **One Active Incident Constraint:** Enforced in two layers:
+  1. **Engine query:** `get_active_incident()` checks for any existing incident where `status != 'resolved'` for that `(service_id, type)`.
+  2. **Database safety net:** Partial unique index `one_active_incident` ON `incidents(service_id, type) WHERE status != 'resolved'` prevents duplicate active rows even under concurrent execution. Any `IntegrityError` is safely caught.
+
+### State Transitions and Recovery
+- **`open` (Initial Breach):** Created automatically on the first breached bucket with timeline event `opened`.
+- **`acknowledged` (Admin Action):** Admin acknowledges an `open` incident. Status becomes `acknowledged`; an audit log entry and timeline event `acknowledged` are recorded.
+- **`recovered` (3 Consecutive Healthy Buckets):**
+  - An `open` or `acknowledged` incident recovers when **3 consecutive healthy NEW minute buckets** arrive (`healthy_streak >= 3`).
+  - Progression tracks `last_bucket` so sub-minute ticks within the same minute bucket do not prematurely advance the streak.
+  - Consistent with the status engine: status turns green healthy when all 3 trailing window buckets are healthy, preventing metric flapping.
+- **`reopened` (Breach Recurrence):** If a `recovered` incident encounters a new breach before being resolved by an admin, it transitions back to `open` (event `reopened`) using the same incident row ID without creating duplicate rows.
+- **`resolved` (Admin Resolution):** Admin resolves an incident from `open`, `acknowledged`, or `recovered`. Status becomes `resolved`; audit log and timeline event `resolved` are written. Once resolved, subsequent breaches will create a new incident.
+
+### Admin Transition Conflict Handling
+- Invalid state transitions (e.g., acknowledging an already acknowledged or recovered incident, or resolving an already resolved incident) raise `ConflictError` (HTTP 409) with structured error payload `{"error": {"code": "CONFLICT", "message": "..."}}`.
+
+### Audit Trail and Security Redaction
+- Immutable audit log records administrative changes: logins, threshold changes, simulator toggles, incident acknowledgement, resolution, and notes.
+- Automatic recursive credential redaction: any field key containing `password`, `token`, `secret`, `cookie`, `session`, `auth`, or `authorization` (case-insensitive, at any nesting level in dicts/lists) is replaced with `"[REDACTED]"`.
+
 

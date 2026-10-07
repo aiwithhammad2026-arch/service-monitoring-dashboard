@@ -77,6 +77,17 @@ class ValidationError(AppError):
         super().__init__(message=message, code=code, status_code=422)
 
 
+class ConflictError(AppError):
+    """Raised on state machine conflict or invalid transition (HTTP 409)."""
+
+    def __init__(
+        self,
+        message: str = "Resource conflict or invalid state transition",
+        code: str = "CONFLICT",
+    ) -> None:
+        super().__init__(message=message, code=code, status_code=409)
+
+
 def register_error_handlers(app: FastAPI) -> None:
     """Register uniform exception handlers returning {"error": {"code", "message"}}."""
 
@@ -108,6 +119,7 @@ def register_error_handlers(app: FastAPI) -> None:
             403: "FORBIDDEN",
             404: "NOT_FOUND",
             405: "METHOD_NOT_ALLOWED",
+            409: "CONFLICT",
             422: "VALIDATION_ERROR",
             429: "RATE_LIMIT_EXCEEDED",
         }

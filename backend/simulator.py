@@ -256,6 +256,19 @@ def tick(
     return written_buckets
 
 
+def tick_and_evaluate(
+    conn: sqlite3.Connection,
+    now: datetime | None = None,
+    seed: int | None = None,
+) -> tuple[list[tuple[str, str]], list[dict]]:
+    """Run tick() and incident evaluate() sequentially within the same transaction."""
+    from backend.incidents import evaluate
+
+    written = tick(conn, now=now, seed=seed)
+    events = evaluate(conn, now=now, written_buckets=written)
+    return written, events
+
+
 class SimulatorService:
     """Async background worker running deterministic simulation ticks on an interval."""
 
@@ -294,10 +307,15 @@ class SimulatorService:
             await asyncio.sleep(settings.sim_tick)
 
     def _run_tick(self) -> list[tuple[str, str]]:
-        """Run single synchronous tick inside a short database transaction."""
+        """Run single synchronous tick + incident evaluation inside a short transaction."""
+        from backend.incidents import evaluate
+
         with get_db() as conn:
-            return tick(conn)
+            written = tick(conn)
+            evaluate(conn, written_buckets=written)
+            return written
 
 
 # Global singleton simulator service
 simulator = SimulatorService()
+
