@@ -1,5 +1,5 @@
 -- Migration 001_init.sql: Core schema tables and constraints
--- Service Monitoring Dashboard (PulseOps)
+-- Service Monitoring Dashboard
 
 -- 1. User accounts for the operations dashboard (admin and viewer roles)
 CREATE TABLE IF NOT EXISTS accounts (

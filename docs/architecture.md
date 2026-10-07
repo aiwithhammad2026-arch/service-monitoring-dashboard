@@ -1,20 +1,53 @@
 # Architecture Overview — Service Monitoring Dashboard
 
-## System Overview
-Service Monitoring Dashboard is a standalone operations monitoring dashboard built for a fictional platform with three products: Website, App, and Admin Console.
+## 1. System Architecture
 
-## Core Components
-- **Backend:** FastAPI, Uvicorn, SQLite in WAL mode with plain SQL migrations.
-- **Frontend:** Vanilla modern ES modules, CSS design tokens, locally vendored Chart.js.
-- **Simulator:** Deterministic background traffic generator emitting request metrics across 10 simulated services.
-- **Metrics Engine:** Fixed-edge latency histograms, p50/p95 calculations, active users window, requests/min.
-- **Incident State Machine:** Deterministic breach detection, alert deduplication, partial unique constraints, and timeline audit logging.
+```text
+┌─────────────────────────────────────────────────────────────┐
+│              Browser Client (Vanilla JS ES Modules)         │
+│  - SPA Hash Router (#/dashboard, #/services, #/incidents)    │
+│  - CSS Design Tokens (Dark / Light responsive theme)        │
+│  - 10s Visibility-Aware Poller                              │
+│  - Locally Vendored Chart.js                                │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ HTTP / Signed Cookie Session
+┌──────────────────────────────▼──────────────────────────────┐
+│                    FastAPI Backend Application              │
+│  ├── /auth        : Password auth, session cookies, RBAC   │
+│  ├── /metrics     : Overview KPIs & continuous history      │
+│  ├── /services    : Health evaluations & threshold updates  │
+│  ├── /incidents   : Incident lifecycle & timeline events    │
+│  ├── /sim         : Chaos toggles & mode controls           │
+│  ├── /audit       : Immutable admin action trail            │
+│  └── /export      : Sanitized CSV streaming                 │
+├──────────────────────────────┬──────────────────────────────┤
+│ Metrics & Status Engine      │ Incident State Machine       │
+│ - Fixed-edge hist merge      │ - Streak-based recovery (3x) │
+│ - Linear p50/p95 calc        │ - Reopen on recurring breach │
+│ - Precedence: gray>red>green │ - Partial unique index dedup │
+├──────────────────────────────┴──────────────────────────────┤
+│ Deterministic Background Simulator                          │
+│ - Async loop (5s ticks) with pure synchronous tick() engine │
+│ - Seeded PRNG keyed by (seed:service:minute)                │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ SQLite WAL Connection
+┌──────────────────────────────▼──────────────────────────────┐
+│                     SQLite Database                         │
+│  - WAL Mode, PRAGMA foreign_keys = ON, PRAGMA busy_timeout  │
+│  - Plain SQL migrations (schema_migrations tracking table)  │
+│  - Tables: accounts, app_users, services, thresholds,       │
+│    sim_state, metric_buckets, incidents, incident_events,   │
+│    audit_logs                                               │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## Frontend Screens
-- `#/login`: Authentication view with username and password inputs, form validation, and credential verification.
-- `#/dashboard`: High-level operations dashboard with time range/product filtering, 8 KPI cards with formula popovers, continuous request volume & latency charts, and service status grid.
-- `#/services`: Filterable and searchable paginated service directory showing real-time health badges, RPM, error rates, and p95 latencies.
-- `#/services/:id`: Service detail view displaying threshold rationale, KPI metrics, continuous 1-hour line charts, incident history, and admin threshold/simulator controls.
-- `#/incidents`: Incident management dashboard with status filters, chronological event timeline drawer, and admin acknowledge/resolve action flows.
-- `#/audit`: Admin audit log table with pagination and safe streaming CSV export downloads for metrics and incidents.
-- `#/simulator`: Simulator control matrix for failure injection, traffic pause toggles, and reporting pause simulation.
+## 2. Core Modules & Responsibilities
+
+- **`backend/db.py`**: SQLite connection factory enforcing WAL journal mode, active foreign keys, and synchronous NORMAL. Handles plain SQL migrations.
+- **`backend/auth.py`**: Stateless session management using `itsdangerous` URLSafeTimedSerializer stored in `HttpOnly`, `SameSite=Lax` cookies. User account existence and role are re-verified from the database on every request. In-memory sliding-window failed login rate limiting (5 attempts / 5 min).
+- **`backend/metrics.py`**: Core telemetry aggregation. Implements 18-bin fixed-edge histogram merging and linear percentile interpolation. Zero traffic returns `null`.
+- **`backend/status.py`**: Evaluates service health across the trailing 3-minute bucket window using strict priority: (1) `No data` / `Stale` (gray), (2) `Failing` (red), (3) `Slow` (red), (4) `Healthy` (green). Strict greater-than comparisons.
+- **`backend/incidents.py`**: Incident lifecycle management (`open` → `acknowledged` → `recovered` → `resolved`). Deduplication enforced via partial unique index `one_active_incident` ON `incidents(service_id, type) WHERE status != 'resolved'`. Recovers after 3 consecutive healthy minute buckets; reopens existing incident row if breached before resolution.
+- **`backend/simulator.py`**: Deterministic background traffic generator running every 5 seconds. Uses `random.Random(f"{seed}:{service_id}:{bucket_start}")` for 100% reproducible traffic across 4 modes (`normal`, `slow`, `failing`, `recovering`). Distinct handling for traffic pausing (`paused=1` writes 0-request buckets) vs telemetry pause (`reporting_paused=1` writes no bucket, inducing Stale status).
+- **`backend/audit.py`**: Centralized audit log writer with automatic recursive redaction for sensitive keys (passwords, tokens, cookies, secrets).
+- **`frontend/js/`**: Client SPA utilizing hash routing, dynamic DOM generation via standard web APIs (no innerHTML), CSS custom property themes, and isolated view lifecycles.

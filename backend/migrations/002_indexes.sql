@@ -1,5 +1,5 @@
 -- Migration 002_indexes.sql: Performance indexes and partial unique constraint
--- Service Monitoring Dashboard (PulseOps)
+-- Service Monitoring Dashboard
 
 -- Partial unique index: Enforces exactly one active incident per (service, type)
 -- Active incidents are any incident with status != 'resolved' (i.e. open, acknowledged, recovered).

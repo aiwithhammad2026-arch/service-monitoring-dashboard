@@ -29,6 +29,7 @@ coverage.xml
 # Agent & Task Tracking (Local Only)
 .agent-state.md
 .agent-tasks/
+00-master-prompt.md
 
 # Operating System Files
 .DS_Store
