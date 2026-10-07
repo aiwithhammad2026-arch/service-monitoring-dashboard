@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS metric_buckets (
 CREATE TABLE IF NOT EXISTS incidents (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
-    type TEXT NOT NULL CHECK (type IN ('error_rate', 'latency', 'stale', 'latency_p95', 'stale_data')),
+    type TEXT NOT NULL CHECK (type IN ('error_rate', 'latency_p95', 'stale_data')),
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'acknowledged', 'recovered', 'resolved')),
     healthy_streak INTEGER NOT NULL DEFAULT 0 CHECK (healthy_streak >= 0),
     last_bucket TEXT,

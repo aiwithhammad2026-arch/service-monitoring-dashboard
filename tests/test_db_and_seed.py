@@ -21,9 +21,10 @@ def test_migrate_twice_applies_nothing_second_time(temp_db_path: Path) -> None:
     """Running migrate twice applies migrations the first time and nothing the second time."""
     # First migration run
     applied_first = run_migrations(temp_db_path)
-    assert len(applied_first) == 2
+    assert len(applied_first) == 3
     assert "001_init.sql" in applied_first
     assert "002_indexes.sql" in applied_first
+    assert "003_incident_updates.sql" in applied_first
 
     # Second migration run
     applied_second = run_migrations(temp_db_path)
@@ -33,7 +34,84 @@ def test_migrate_twice_applies_nothing_second_time(temp_db_path: Path) -> None:
     with get_db(temp_db_path) as conn:
         rows = conn.execute("SELECT version FROM schema_migrations ORDER BY version;").fetchall()
         versions = [row["version"] for row in rows]
-        assert versions == ["001_init.sql", "002_indexes.sql"]
+        assert versions == ["001_init.sql", "002_indexes.sql", "003_incident_updates.sql"]
+
+
+def test_migration_003_updates_incident_schema(tmp_path: Path) -> None:
+    """Apply 001 and 002 on temp DB, then run 003 migration and verify schema and constraints."""
+    db_file = tmp_path / "migration_003_test.db"
+    now_str = datetime.now(UTC).isoformat()
+
+    conn = sqlite3.connect(str(db_file))
+    conn.execute("PRAGMA foreign_keys = ON;")
+
+    # Apply 001 and 002 manually
+    from backend.db import MIGRATIONS_DIR
+
+    conn.executescript((MIGRATIONS_DIR / "001_init.sql").read_text(encoding="utf-8"))
+    conn.executescript((MIGRATIONS_DIR / "002_indexes.sql").read_text(encoding="utf-8"))
+
+    conn.execute(
+        "CREATE TABLE schema_migrations (version TEXT PRIMARY KEY, applied_at TEXT NOT NULL);"
+    )
+    conn.execute("INSERT INTO schema_migrations VALUES ('001_init.sql', ?);", (now_str,))
+    conn.execute("INSERT INTO schema_migrations VALUES ('002_indexes.sql', ?);", (now_str,))
+
+    # Insert test service and incident with old type 'latency_p95'
+    conn.execute(
+        """
+        INSERT INTO services (id, name, product, description, created_at)
+        VALUES ('auth-api', 'Auth', 'website', '', ?);
+        """,
+        (now_str,),
+    )
+    conn.execute(
+        """
+        INSERT INTO incidents (
+            service_id, type, status, healthy_streak, summary,
+            opened_at, created_at, updated_at
+        ) VALUES ('auth-api', 'latency_p95', 'open', 0, 'High latency', ?, ?, ?);
+        """,
+        (now_str, now_str, now_str),
+    )
+    conn.commit()
+    conn.close()
+
+    # Run migrations -> 003 should apply
+    applied = run_migrations(db_file)
+    assert applied == ["003_incident_updates.sql"]
+
+    # Re-open and verify
+    with get_db(db_file) as c:
+        row = c.execute("SELECT type FROM incidents WHERE service_id='auth-api';").fetchone()
+        assert row["type"] == "latency", "003 migration must migrate 'latency_p95' to 'latency'"
+
+        # Verify new type 'error_rate', 'latency', 'stale' work
+        c.execute(
+            "UPDATE incidents SET status='resolved', resolved_at=? WHERE service_id='auth-api';",
+            (now_str,),
+        )
+        c.execute(
+            """
+            INSERT INTO incidents (
+                service_id, type, status, healthy_streak, summary,
+                opened_at, created_at, updated_at
+            ) VALUES ('auth-api', 'stale', 'open', 0, 'Stale telemetry', ?, ?, ?);
+            """,
+            (now_str, now_str, now_str),
+        )
+
+        # Verify old/invalid types are rejected by the strict check constraint
+        with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint failed"):
+            c.execute(
+                """
+                INSERT INTO incidents (
+                    service_id, type, status, healthy_streak, summary,
+                    opened_at, created_at, updated_at
+                ) VALUES ('auth-api', 'invalid_type', 'open', 0, 'Invalid', ?, ?, ?);
+                """,
+                (now_str, now_str, now_str),
+            )
 
 
 def test_seed_twice_does_not_duplicate_rows(temp_db_path: Path) -> None:
