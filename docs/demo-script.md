@@ -114,4 +114,4 @@ Run the automated test suite in the terminal:
 uv run pytest --cov=backend -q
 uv run ruff check .
 ```
-Show 100% passing tests (130 tests) and over 90% test coverage with zero linter errors.
+Show 100% passing tests (132 tests) and 93% backend test coverage with zero linter errors.

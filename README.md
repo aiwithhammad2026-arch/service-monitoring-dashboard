@@ -223,7 +223,7 @@ All API responses use JSON and require an authenticated session cookie unless ma
 
 ## Unfinished Items & Future Improvements
 
-- **Scenario File Runner (`MD_SIM_SCENARIO`):** Setting and configuration hook is present in `backend/config.py`, but automated JSON scenario scheduling is currently deferred.
+- **Scenario Replay:** Automated JSON scenario scheduling is deferred; chaos controls are operated via API and UI.
 - **Persistent Rate Limiting:** The failed login rate limiter is currently in-memory (resets on server process restart). Future improvement would store sliding windows in SQLite or Redis.
 - **Export Filters:** CSV export streams all buckets or all incidents; UI-driven date range filtering for CSV exports can be added.
 - **WebSocket Streaming:** Optional live stream channel for sub-second telemetry updates.

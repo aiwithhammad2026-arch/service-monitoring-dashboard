@@ -32,5 +32,5 @@ This document lists the technical limitations, constraints, and intentional trad
   The failed login rate limiter (5 failed attempts per `(username, IP)` per 5 minutes) stores counters in process memory. If the backend process restarts, accumulated failed attempt counters are reset.
 - **Signed Cookie Invalidation:**
   User sessions are signed using `itsdangerous` timestamps. While the application re-verifies user existence and role from SQLite on every request (allowing immediate permission revocation or account disabling), the cryptographic signature itself cannot be revoked globally without rotating `MD_SECRET_KEY` or waiting for the session to expire (default 24 hours).
-- **Scenario File Runner (`MD_SIM_SCENARIO`):**
-  The configuration setting `MD_SIM_SCENARIO` is defined in `backend/config.py`, but automated JSON-driven time-offset chaos scenario execution is not implemented. Chaos injection is performed via the live API / simulator UI controls.
+- **Scenario Replay Not Implemented:**
+  Automated JSON-driven time-offset chaos scenario scheduling is not implemented; live chaos injection is performed via the simulator UI and API controls.

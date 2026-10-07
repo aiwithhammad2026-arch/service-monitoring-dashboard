@@ -77,10 +77,6 @@ Evaluated over the recent 3-minute bucket window in strict priority order:
 - Any exception in a tick is logged and the loop continues — a single bad tick never kills the service.
 - `MD_SIM_ENABLED=0` disables the entire loop before it starts.
 
-### Scenario File (Optional)
-- `MD_SIM_SCENARIO` path points to a JSON file describing time-offset events (e.g. minute 5: set `payments` to `failing`; minute 12: `recovering`).
-- Hook point is documented in `simulator.py`.
-
 ## 6. Incident State Machine and Audit Logging (Task 06)
 
 ### Incident Types and Deduplication

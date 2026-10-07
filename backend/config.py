@@ -35,7 +35,6 @@ class Settings:
         self.rate_limit_max_attempts: int = int(os.getenv("MD_RATE_LIMIT_MAX_ATTEMPTS", "5"))
         self.rate_limit_window_s: int = int(os.getenv("MD_RATE_LIMIT_WINDOW_S", "300"))
         self.sim_enabled: bool = os.getenv("MD_SIM_ENABLED", "1").lower() in ("true", "1", "yes")
-        self.sim_scenario: str | None = os.getenv("MD_SIM_SCENARIO", None)
 
         # Security check: warn on default secret
         if self.secret_key == DEFAULT_SECRET_KEY:
