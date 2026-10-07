@@ -30,7 +30,7 @@ This guide provides plain-language explanations for core architectural mechanism
 
 ### 3. Why 401 Unauthorized Differs From 403 Forbidden
 - **401 Unauthorized (`backend/auth.py`):** "Who are you?" The client provided no session cookie, an expired session cookie, or an invalid cryptographic signature. The client is unauthenticated and must log in.
-- **403 Forbidden (`backend/auth.py`):** "I know who you are, but you cannot do this." The client is authenticated (e.g. logged in as `viewer`), but attempts an administrative write operation (e.g. `PUT /services/{id}/thresholds` or `POST /incidents/{id}/ack`) or omits the required `X-Requested-With` CSRF header.
+- **403 Forbidden (`backend/auth.py`, `backend/main.py`):** "I know who you are, but you cannot do this." The client is authenticated (e.g. logged in as `viewer`), but attempts an administrative write operation (e.g. `PUT /services/{id}/thresholds` or `POST /incidents/{id}/ack`) or omits the required `x-requested-with` CSRF header (`backend/main.py`).
 
 ---
 

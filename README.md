@@ -37,7 +37,7 @@ graph TD
 | **Migrations** | Plain SQL migrations (`001_init.sql`, etc.) | Transparent schema versioning without ORM abstraction overhead |
 | **Authentication** | `itsdangerous` signed cookies, `bcrypt` (cost 12) | Stateless HttpOnly SameSite=Lax sessions, server-enforced RBAC on every request |
 | **Frontend** | Vanilla HTML5, CSS Custom Properties, ES Modules | Zero build step, instant load, no node_modules bundle pipeline |
-| **Visualisation** | Chart.js (vendored locally in `frontend/vendor/`) | No external CDN calls; responsive minute-by-minute line charts |
+| **Visualisation** | Chart.js (vendored locally in `frontend/vendor/chart.umd.js`) | No external CDN calls; responsive minute-by-minute line charts |
 | **Testing** | pytest, httpx, pytest-cov, pytest-asyncio, ruff | Deterministic isolated SQLite fixtures, fast test execution |
 
 ---
@@ -47,8 +47,8 @@ graph TD
 ```text
 service-monitoring-dashboard/
 ├── backend/
-│   ├── migrations/          # Versioned plain SQL migrations (001_init, 002_indexes, 003_incident_updates)
-│   ├── routes/              # FastAPI API route modules (auth, metrics, services, incidents, sim, audit, export)
+│   ├── migrations/          # Versioned plain SQL migrations (001_init.sql, 002_indexes.sql, 003_incident_updates.sql)
+│   ├── routes/              # FastAPI API route modules (auth.py, metrics.py, services.py, incidents.py, sim.py, audit.py, export.py)
 │   ├── audit.py             # Immutable audit logging with automatic recursive credential redaction
 │   ├── auth.py              # Password hashing, session cookie management, RBAC dependencies, rate limiting
 │   ├── config.py            # Pydantic/dataclass environment configuration with secure defaults
@@ -61,19 +61,21 @@ service-monitoring-dashboard/
 │   ├── simulator.py         # Deterministic background traffic generator and chaos injection engine
 │   └── status.py            # Service health evaluation engine (gray/red/green precedence rules)
 ├── frontend/
-│   ├── css/                 # Modern design system (base.css, layout.css, components.css, utilities.css)
+│   ├── css/
+│   │   └── styles.css       # Unified design system (tokens, layout, components, themes)
 │   ├── js/
-│   │   ├── views/           # SPA view controllers (dashboard, services, service-detail, incidents, audit, sim)
+│   │   ├── views/           # SPA view controllers (dashboard.js, services.js, service-detail.js, incidents.js, audit.js, simulator.js)
 │   │   ├── api.js           # Fetch wrapper with CSRF headers, sequence tracking, and error mapping
 │   │   ├── app.js           # SPA shell, authentication bootloader, theme switcher, layout management
 │   │   ├── poller.js        # Interval polling helper with document visibility lifecycle management
 │   │   ├── router.js        # Hash-based client router with dynamic parameter matching
 │   │   └── ui.js            # Reusable DOM builders (badges, skeletons, modals, toasts, cards)
-│   ├── vendor/              # Locally vendored Chart.js library (no external CDN)
+│   ├── vendor/
+│   │   └── chart.umd.js     # Locally vendored chart bundle (no external CDN)
 │   └── index.html           # Single-page application entrypoint
 ├── docs/                    # Architectural documentation, assumptions, limitations, review guide, demo script
-├── scripts/                 # Helper & demo scripts (sim_demo.py for CLI walkthrough, verify_api_live.py for live API verification)
-├── tests/                   # Automated pytest suite covering metrics, status, auth, incidents, restart, security
+├── scripts/                 # Helper & demo scripts (check_docs.py, sim_demo.py, verify_api_live.py)
+├── tests/                   # Automated pytest suite (test_docs.py, test_metrics.py, test_status.py, etc.)
 ├── pyproject.toml           # Project metadata, dependencies, ruff, and pytest configurations
 └── uv.lock                  # Deterministic dependency lockfile
 ```

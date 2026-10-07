@@ -345,3 +345,31 @@ def test_product_filter_on_overview_and_history(tmp_path: Path) -> None:
         assert ov_app["product_filter"] == "app"
     finally:
         conn.close()
+
+
+def test_active_user_window_setting(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Active user count reflects settings.active_user_window_m."""
+    from backend.config import settings
+
+    db_file = tmp_path / "test_active_window.db"
+    seed(db_file)
+    now = datetime(2026, 10, 6, 12, 0, 0, tzinfo=UTC)
+    twelve_m_ago = (now - timedelta(minutes=12)).isoformat()
+
+    conn = get_connection(db_file)
+    try:
+        # Clear all user last_seen_at and insert users seen 12 minutes ago
+        conn.execute("UPDATE app_users SET last_seen_at = ?", (twelve_m_ago,))
+        conn.commit()
+
+        # Window = 15m -> 12 minutes ago is active
+        monkeypatch.setattr(settings, "active_user_window_m", 15)
+        ov_15 = overview(conn, minutes=60, now=now)
+        assert ov_15["active_users"] == 200
+
+        # Window = 10m -> 12 minutes ago is inactive (0 active)
+        monkeypatch.setattr(settings, "active_user_window_m", 10)
+        ov_10 = overview(conn, minutes=60, now=now)
+        assert ov_10["active_users"] == 0
+    finally:
+        conn.close()
