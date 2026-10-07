@@ -72,6 +72,7 @@ service-monitoring-dashboard/
 │   ├── vendor/              # Locally vendored Chart.js library (no external CDN)
 │   └── index.html           # Single-page application entrypoint
 ├── docs/                    # Architectural documentation, assumptions, limitations, review guide, demo script
+├── scripts/                 # Helper & demo scripts (sim_demo.py for CLI walkthrough, verify_api_live.py for live API verification)
 ├── tests/                   # Automated pytest suite covering metrics, status, auth, incidents, restart, security
 ├── pyproject.toml           # Project metadata, dependencies, ruff, and pytest configurations
 └── uv.lock                  # Deterministic dependency lockfile
