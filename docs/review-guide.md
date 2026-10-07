@@ -66,9 +66,9 @@ This guide provides plain-language explanations for core architectural mechanism
 | Change Request | Files to Modify | Exact Functions / Symbols | Tests to Update |
 |---|---|---|---|
 | **Change Active-User Window** | `backend/config.py`<br>`backend/metrics.py` | `Settings.active_user_window_m`<br>`overview()` (`last_seen_at >= ?` delta) | `tests/test_metrics.py`<br>`tests/test_simulator.py` |
-| **Add a New Service** | `backend/seed.py`<br>`backend/migrations/001_init.sql` | `seed_services()` list<br>`services` table catalog | `tests/test_db_and_seed.py`<br>`tests/test_api.py` |
-| **Change Default Thresholds** | `backend/seed.py`<br>`backend/config.py`<br>`backend/status.py` | `seed_thresholds()`<br>`Settings.stale_after_s`<br>`get_service_thresholds()` | `tests/test_status.py`<br>`tests/test_metrics.py` |
-| **New Status Filter or Column** | `backend/routes/services.py`<br>`frontend/js/views/services.js` | `ALLOWED_STATUSES` in `list_services()`<br>`renderServicesTable()` | `tests/test_api.py::test_services_list_filtering` |
-| **Add a "Degraded" Middle Status** | `backend/status.py`<br>`frontend/js/ui.js`<br>`frontend/css/components.css` | `evaluate_service_status()` (add rule)<br>`breaches()`<br>`makeStatusBadge()` | `tests/test_status.py`<br>`tests/test_metrics.py` |
-| **Change Polling Interval** | `frontend/js/poller.js`<br>`frontend/js/app.js`<br>`backend/config.py` | `DEFAULT_INTERVAL = 10000`<br>`startIncidentBadgePoller()`<br>`Settings.sim_tick` | `tests/test_frontend.py` |
-| **Add a New KPI Card** | `backend/metrics.py`<br>`backend/routes/metrics.py`<br>`frontend/js/views/dashboard.js` | `overview()` return dict<br>`get_overview()`<br>`renderKpiCards()` | `tests/test_metrics.py`<br>`tests/test_api.py` |
+| **Add a New Service** | `backend/seed.py`<br>`backend/migrations/001_init.sql` | `SERVICES_CATALOG` in `seed.py`<br>`services` table catalog | `tests/test_db_and_seed.py`<br>`tests/test_api.py` |
+| **Change Default Thresholds** | `backend/seed.py`<br>`backend/config.py`<br>`backend/status.py` | `seed()` in `seed.py`<br>`Settings.stale_after_s`<br>`get_service_thresholds()` | `tests/test_status.py`<br>`tests/test_metrics.py` |
+| **New Status Filter or Column** | `backend/routes/services.py`<br>`frontend/js/views/services.js` | `ALLOWED_STATUSES` in `list_services()`<br>`renderTable()` | `tests/test_api.py::test_services_list_filtering` |
+| **Add a "Degraded" Middle Status** | `backend/status.py`<br>`frontend/js/ui.js`<br>`frontend/css/styles.css` | `evaluate_service_status()` (add rule)<br>`breaches()`<br>`makeStatusBadge()` | `tests/test_status.py`<br>`tests/test_metrics.py` |
+| **Change Polling Interval** | `frontend/js/poller.js`<br>`frontend/js/app.js`<br>`backend/config.py` | `createPoller({ intervalMs })`<br>`_startIncidentPoll()`<br>`Settings.sim_tick` | `tests/test_frontend.py` |
+| **Add a New KPI Card** | `backend/metrics.py`<br>`backend/routes/metrics.py`<br>`frontend/js/views/dashboard.js` | `overview()` return dict<br>`get_overview()`<br>`renderKPIs()` | `tests/test_metrics.py`<br>`tests/test_api.py` |

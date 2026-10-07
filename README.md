@@ -131,6 +131,7 @@ Configured in `.env` (refer to `.env.example`):
 | `MD_STALE_AFTER_S` | `180` | Age threshold in seconds before telemetry is marked stale (gray) |
 | `MD_ACTIVE_USER_WINDOW_M` | `15` | Window in minutes for calculating active registered users |
 | `MD_BCRYPT_ROUNDS` | `12` | Cost factor for bcrypt password hashing (lowered in test environments) |
+| `MD_SESSION_MAX_AGE_S` | `86400` | Session cookie validity max age in seconds (24 hours) |
 | `MD_RATE_LIMIT_MAX_ATTEMPTS` | `5` | Maximum failed login attempts allowed per (user, IP) |
 | `MD_RATE_LIMIT_WINDOW_S` | `300` | Sliding window in seconds for failed login rate limiting (5 minutes) |
 
