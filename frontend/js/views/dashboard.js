@@ -1,11 +1,14 @@
 /**
- * views/dashboard.js — Operations overview dashboard.
+ * views/dashboard.js — Operations overview dashboard (Soft Bento DNA).
  *
  * Implements:
- *  - Filter bar (range 15m/1h/6h/24h, product All/Website/App/Admin Console, last updated, Retry).
- *  - 8 KPI cards with formula popovers and null handling ("No data").
- *  - 2 Chart.js charts with accessible aria-labels and CSS variable theming.
- *  - Service health status grid.
+ *  - Page header: huge title "Overview", filter chips group (range, product, updated, refresh).
+ *  - Bento grid (12 cols):
+ *      Row 1: Requests & Errors chart (8 cols) + Service Health breakdown (4 cols).
+ *      Row 2: Latency p50/p95 stepped chart (4 cols) + Insight tile (4 cols) + Dot-matrix KPI tiles (4 cols).
+ *      Row 3: Remaining KPI tiles (12 cols).
+ *  - 8 KPI cards with formula popovers, big numerals (44px), muted labels and units.
+ *  - Monitored Services grid with soft bento cards.
  *  - 10s polling with cleanup on unmount.
  */
 
@@ -21,6 +24,19 @@ import {
   fmtPct,
   fmtMs,
 } from "../ui.js";
+import {
+  iconCalendar,
+  iconLayers,
+  iconClock,
+  iconRefresh,
+  iconInfo,
+} from "../icons.js";
+import {
+  createHatchPattern,
+  renderDotMatrix,
+  renderHealthBreakdown,
+  renderInsightTile,
+} from "../charts-theme.js";
 
 let _poller = null;
 let _reqChart = null;
@@ -30,33 +46,41 @@ const KPI_DEFS = [
   {
     key: "registered_users",
     label: "Registered Users",
-    fmt: (v) => fmtNum(v),
-    sub: "Total user accounts",
+    unit: "accounts",
+    fmt: (v) => (v === null ? "No data" : fmtNum(v)),
+    sub: "Total synthetic accounts",
     title: "Registered Users",
     formula: "COUNT(id) FROM app_users",
     desc: "Total synthetic user accounts seeded in the database.",
   },
   {
     key: "active_users",
-    label: "Active Users (15m)",
-    fmt: (v) => fmtNum(v),
-    sub: "Window: last 15 min",
-    title: "Active Users",
+    label: "Active Users",
+    unit: "active",
+    fmt: (v) => (v === null ? "No data" : fmtNum(v)),
+    sub: "Sliding 15m window",
+    title: "Active Users (15m)",
     formula: "COUNT(id) WHERE last_seen_at >= now - 15m",
     desc: "Distinct users with activity in the configured 15-minute sliding window.",
+    isDotMatrix: true,
+    dotColor: "green",
   },
   {
     key: "req_min",
     label: "Requests / min",
-    fmt: (v) => fmtNum(v),
-    sub: "Total rate in window",
+    unit: "req/m",
+    fmt: (v) => (v === null ? "No data" : fmtNum(v)),
+    sub: "Window throughput rate",
     title: "Requests Per Minute",
     formula: "Total Requests / Window Minutes",
     desc: "Average request throughput per minute across the selected time range.",
+    isDotMatrix: true,
+    dotColor: "blue",
   },
   {
     key: "success_pct",
-    label: "Success %",
+    label: "Success Rate",
+    unit: "%",
     fmt: (v) => (v === null ? "No data" : fmtPct(v)),
     sub: "Healthy response rate",
     title: "Success Percentage",
@@ -65,9 +89,10 @@ const KPI_DEFS = [
   },
   {
     key: "error_pct",
-    label: "Error %",
+    label: "Error Rate",
+    unit: "%",
     fmt: (v) => (v === null ? "No data" : fmtPct(v)),
-    sub: "Failed response rate",
+    sub: "5xx response rate",
     title: "Error Percentage",
     formula: "(Total Errors / Total Requests) * 100",
     desc: "Percentage of requests returning 5xx status codes. Returns 'No data' if zero requests.",
@@ -75,6 +100,7 @@ const KPI_DEFS = [
   {
     key: "avg_latency_ms",
     label: "Avg Latency",
+    unit: "ms",
     fmt: (v) => (v === null ? "No data" : fmtMs(v)),
     sub: "Mean response duration",
     title: "Average Latency",
@@ -84,8 +110,9 @@ const KPI_DEFS = [
   {
     key: "p50_ms",
     label: "p50 Latency",
+    unit: "ms",
     fmt: (v) => (v === null ? "No data" : fmtMs(v)),
-    sub: "Median response time",
+    sub: "Median response duration",
     title: "p50 Latency (Median)",
     formula: "50th percentile on merged histogram",
     desc: "Linear interpolation across element-wise summed latency histogram bins.",
@@ -93,8 +120,9 @@ const KPI_DEFS = [
   {
     key: "p95_ms",
     label: "p95 Latency",
+    unit: "ms",
     fmt: (v) => (v === null ? "No data" : fmtMs(v)),
-    sub: "95th percentile response",
+    sub: "Tail latency (95th %)",
     title: "p95 Latency",
     formula: "95th percentile on merged histogram",
     desc: "Tail latency metric. Breaches over max_p95_ms trigger Slow health status.",
@@ -102,7 +130,6 @@ const KPI_DEFS = [
 ];
 
 export function renderDashboard(container) {
-  // Cleanup previous poller and charts
   if (_poller) {
     _poller.stop();
     _poller = null;
@@ -116,30 +143,33 @@ export function renderDashboard(container) {
   let currentProduct = "all";
   let activePopover = null;
 
-  // Header & Title
+  // 1. Page Header with Huge Title & Filter Chips
   const header = document.createElement("div");
-  header.className = "section-header";
+  header.className = "page-header";
 
   const title = document.createElement("h1");
   title.className = "page-title";
-  title.style.marginBottom = "0";
-  title.textContent = "Operations Dashboard";
+  title.textContent = "Overview";
   header.appendChild(title);
 
-  // Filter Bar
-  const filterBar = document.createElement("div");
-  filterBar.className = "filter-bar";
+  // Filter Chips Group
+  const filterChipsGroup = document.createElement("div");
+  filterChipsGroup.className = "filter-chips-group";
 
-  // Range Select
+  // Chip 1: Range Select
+  const rangeChip = document.createElement("div");
+  rangeChip.className = "filter-chip";
+  rangeChip.appendChild(iconCalendar(14));
+
   const rangeSelect = document.createElement("select");
   rangeSelect.id = "dashboard-range-select";
-  rangeSelect.className = "form-select";
+  rangeSelect.className = "filter-chip-select";
   rangeSelect.setAttribute("aria-label", "Time range");
   [
-    { val: "15m", label: "Last 15 minutes" },
-    { val: "1h", label: "Last 1 hour" },
-    { val: "6h", label: "Last 6 hours" },
-    { val: "24h", label: "Last 24 hours" },
+    { val: "15m", label: "Last 15m" },
+    { val: "1h", label: "Last 1h" },
+    { val: "6h", label: "Last 6h" },
+    { val: "24h", label: "Last 24h" },
   ].forEach((opt) => {
     const el = document.createElement("option");
     el.value = opt.val;
@@ -147,11 +177,17 @@ export function renderDashboard(container) {
     if (opt.val === currentRange) el.selected = true;
     rangeSelect.appendChild(el);
   });
+  rangeChip.appendChild(rangeSelect);
+  filterChipsGroup.appendChild(rangeChip);
 
-  // Product Select
+  // Chip 2: Product Select
+  const prodChip = document.createElement("div");
+  prodChip.className = "filter-chip";
+  prodChip.appendChild(iconLayers(14));
+
   const productSelect = document.createElement("select");
   productSelect.id = "dashboard-product-select";
-  productSelect.className = "form-select";
+  productSelect.className = "filter-chip-select";
   productSelect.setAttribute("aria-label", "Product filter");
   [
     { val: "all", label: "All Products" },
@@ -165,57 +201,52 @@ export function renderDashboard(container) {
     if (opt.val === currentProduct) el.selected = true;
     productSelect.appendChild(el);
   });
+  prodChip.appendChild(productSelect);
+  filterChipsGroup.appendChild(prodChip);
 
-  // Updated timestamp indicator
-  const updatedEl = document.createElement("span");
-  updatedEl.className = "text-sm text-muted";
-  updatedEl.id = "dashboard-last-updated";
-  updatedEl.textContent = "Updating...";
+  // Chip 3: Updated Timestamp
+  const updatedChip = document.createElement("div");
+  updatedChip.className = "filter-chip filter-chip-static";
+  updatedChip.appendChild(iconClock(14));
+  const updatedText = document.createElement("span");
+  updatedText.id = "dashboard-last-updated";
+  updatedText.textContent = "Updating...";
+  updatedChip.appendChild(updatedText);
+  filterChipsGroup.appendChild(updatedChip);
 
-  // Refresh button
+  // Chip 4: Refresh Button
   const refreshBtn = document.createElement("button");
-  refreshBtn.className = "btn btn-secondary";
+  refreshBtn.type = "button";
   refreshBtn.id = "dashboard-refresh-btn";
-  refreshBtn.textContent = "Refresh";
+  refreshBtn.className = "filter-chip filter-chip-btn";
+  refreshBtn.setAttribute("aria-label", "Refresh data");
+  refreshBtn.title = "Refresh dashboard metrics";
+  refreshBtn.appendChild(iconRefresh(14));
+  const refreshLabel = document.createElement("span");
+  refreshLabel.textContent = "Refresh";
+  refreshBtn.appendChild(refreshLabel);
   refreshBtn.addEventListener("click", () => fetchAllData());
+  filterChipsGroup.appendChild(refreshBtn);
 
-  filterBar.appendChild(rangeSelect);
-  filterBar.appendChild(productSelect);
-  filterBar.appendChild(refreshBtn);
-  filterBar.appendChild(updatedEl);
+  header.appendChild(filterChipsGroup);
 
   // Stale banner container
   const bannerContainer = document.createElement("div");
   bannerContainer.id = "dashboard-banner-container";
-  bannerContainer.className = "mb-4";
 
-  // KPI Grid container
-  const kpiGrid = document.createElement("div");
-  kpiGrid.className = "kpi-grid";
-  kpiGrid.id = "dashboard-kpi-grid";
+  // Bento Grid Container
+  const bentoGrid = document.createElement("div");
+  bentoGrid.className = "bento-grid";
 
-  // Initial Skeletons for KPIs
-  KPI_DEFS.forEach(() => {
-    const skeletonCard = document.createElement("div");
-    skeletonCard.className = "kpi-card";
-    skeletonCard.appendChild(makeSkeleton("skeleton-text--sm"));
-    skeletonCard.appendChild(makeSkeleton("skeleton-text--lg mt-2"));
-    skeletonCard.appendChild(makeSkeleton("skeleton-text--sm mt-2"));
-    kpiGrid.appendChild(skeletonCard);
-  });
-
-  // Charts Grid container
-  const chartsGrid = document.createElement("div");
-  chartsGrid.className = "charts-grid";
-
-  // Request & Errors Chart Card
+  // ── ROW 1: Hero Requests Chart (8 cols) + Service Health (4 cols) ──
+  // Hero Requests Card
   const reqCard = document.createElement("div");
-  reqCard.className = "chart-card";
+  reqCard.className = "card bento-col-8";
   const reqHeader = document.createElement("div");
-  reqHeader.className = "section-header";
+  reqHeader.className = "card-header";
   const reqTitle = document.createElement("h2");
   reqTitle.className = "card-title";
-  reqTitle.textContent = "Requests & Errors Over Time";
+  reqTitle.textContent = "Requests & Errors";
   reqHeader.appendChild(reqTitle);
   reqCard.appendChild(reqHeader);
 
@@ -224,18 +255,39 @@ export function renderDashboard(container) {
   const reqCanvas = document.createElement("canvas");
   reqCanvas.id = "chart-requests";
   reqCanvas.setAttribute("role", "img");
-  reqCanvas.setAttribute("aria-label", "Line chart of requests and errors over time");
+  reqCanvas.setAttribute("aria-label", "Chart of requests with hatched fill and errors over time");
   reqWrapper.appendChild(reqCanvas);
   reqCard.appendChild(reqWrapper);
 
+  // Service Health Breakdown Card
+  const healthCard = document.createElement("div");
+  healthCard.className = "card bento-col-4";
+  const healthHeader = document.createElement("div");
+  healthHeader.className = "card-header";
+  const healthTitle = document.createElement("h2");
+  healthTitle.className = "card-title";
+  healthTitle.textContent = "Service Health";
+  healthHeader.appendChild(healthTitle);
+  healthCard.appendChild(healthHeader);
+
+  const healthBody = document.createElement("div");
+  healthBody.id = "dashboard-health-body";
+  healthBody.appendChild(makeSkeleton("skeleton-text--lg mb-3"));
+  healthBody.appendChild(makeSkeleton("skeleton-text--lg mb-3"));
+  healthCard.appendChild(healthBody);
+
+  bentoGrid.appendChild(reqCard);
+  bentoGrid.appendChild(healthCard);
+
+  // ── ROW 2: Latency Chart (4 cols) + Insight Tile (4 cols) + Dot-Matrix KPI Tiles (4 cols) ──
   // Latency Chart Card
   const latCard = document.createElement("div");
-  latCard.className = "chart-card";
+  latCard.className = "card bento-col-4";
   const latHeader = document.createElement("div");
-  latHeader.className = "section-header";
+  latHeader.className = "card-header";
   const latTitle = document.createElement("h2");
   latTitle.className = "card-title";
-  latTitle.textContent = "Latency Over Time (p50 / p95)";
+  latTitle.textContent = "Latency (p50 / p95)";
   latHeader.appendChild(latTitle);
   latCard.appendChild(latHeader);
 
@@ -244,24 +296,59 @@ export function renderDashboard(container) {
   const latCanvas = document.createElement("canvas");
   latCanvas.id = "chart-latency";
   latCanvas.setAttribute("role", "img");
-  latCanvas.setAttribute("aria-label", "Line chart of latency p50 and p95 over time");
+  latCanvas.setAttribute("aria-label", "Stepped line chart of latency p50 and p95 over time");
   latWrapper.appendChild(latCanvas);
   latCard.appendChild(latWrapper);
 
-  chartsGrid.appendChild(reqCard);
-  chartsGrid.appendChild(latCard);
+  // Insight Tile Card
+  const insightContainer = document.createElement("div");
+  insightContainer.className = "bento-col-4";
+  insightContainer.id = "dashboard-insight-container";
+  renderInsightTile(insightContainer, {
+    pct: 100,
+    summaryText: "Telemetry normal across all monitored service endpoints.",
+  });
 
-  // Services Grid Section
+  // KPI Slot for Requests/min & Active Users
+  const matrixKpiCol = document.createElement("div");
+  matrixKpiCol.className = "bento-col-4";
+  matrixKpiCol.id = "dashboard-matrix-kpis";
+
+  bentoGrid.appendChild(latCard);
+  bentoGrid.appendChild(insightContainer);
+  bentoGrid.appendChild(matrixKpiCol);
+
+  // ── ROW 3: Remaining KPI Cards ──
+  const remainingKpiContainer = document.createElement("div");
+  remainingKpiContainer.className = "bento-col-12";
+  const remainingKpiGrid = document.createElement("div");
+  remainingKpiGrid.className = "bento-grid";
+  remainingKpiGrid.id = "dashboard-remaining-kpis";
+  remainingKpiContainer.appendChild(remainingKpiGrid);
+  bentoGrid.appendChild(remainingKpiContainer);
+
+  // Initial Skeletons for KPIs
+  KPI_DEFS.forEach((def) => {
+    const sk = document.createElement("div");
+    sk.className = "kpi-tile bento-col-4";
+    sk.appendChild(makeSkeleton("skeleton-text--sm"));
+    sk.appendChild(makeSkeleton("skeleton-text--lg mt-2"));
+    sk.appendChild(makeSkeleton("skeleton-text--sm mt-2"));
+    remainingKpiGrid.appendChild(sk);
+  });
+
+  // ── Monitored Services Grid Section ──
   const servicesSection = document.createElement("div");
   servicesSection.className = "mt-6";
 
   const servicesHeader = document.createElement("div");
-  servicesHeader.className = "section-header";
+  servicesHeader.className = "page-header";
   const servicesTitle = document.createElement("h2");
-  servicesTitle.className = "section-title";
+  servicesTitle.className = "card-title";
+  servicesTitle.style.fontSize = "var(--text-xl)";
   servicesTitle.textContent = "Monitored Services";
   const servicesSubtitle = document.createElement("span");
-  servicesSubtitle.className = "section-subtitle";
+  servicesSubtitle.className = "text-sm text-muted";
   servicesSubtitle.id = "dashboard-services-count";
   servicesSubtitle.textContent = "Loading services...";
   servicesHeader.appendChild(servicesTitle);
@@ -275,10 +362,8 @@ export function renderDashboard(container) {
 
   // Assemble View
   container.appendChild(header);
-  container.appendChild(filterBar);
   container.appendChild(bannerContainer);
-  container.appendChild(kpiGrid);
-  container.appendChild(chartsGrid);
+  container.appendChild(bentoGrid);
   container.appendChild(servicesSection);
 
   // Filter change events
@@ -291,31 +376,34 @@ export function renderDashboard(container) {
     fetchAllData();
   });
 
-  // Close popover on document click
+  // Popover closer
   document.addEventListener("click", (e) => {
-    if (activePopover && !activePopover.contains(e.target) && !e.target.classList.contains("kpi-info-btn")) {
+    if (activePopover && !activePopover.contains(e.target) && !e.target.closest(".card-info-btn")) {
       activePopover.remove();
       activePopover = null;
     }
   });
 
-  // Main data fetching function
+  // Main fetch function
   async function fetchAllData() {
     refreshBtn.disabled = true;
     try {
-      const [overviewData, historyData, servicesData] = await Promise.all([
+      const [overviewData, historyData, servicesData, incidentsData] = await Promise.all([
         apiGet(`/metrics/overview?range=${currentRange}&product=${currentProduct}`, { viewKey: "dash-overview" }),
         apiGet(`/metrics/history?range=${currentRange}&product=${currentProduct}`, { viewKey: "dash-history" }),
         apiGet(`/services?product=${currentProduct}&page_size=100`, { viewKey: "dash-services" }),
+        apiGet(`/incidents?status=open&limit=100`, { viewKey: "dash-open-inc" }).catch(() => ({ items: [] })),
       ]);
 
-      renderKPIs(overviewData);
+      renderKPIs(overviewData, historyData);
       renderCharts(historyData);
+      renderHealthCard(servicesData);
+      renderInsight(servicesData, incidentsData);
       renderServicesList(servicesData);
       checkStaleStatus(overviewData);
 
       const now = new Date();
-      updatedEl.textContent = `Updated ${now.toLocaleTimeString()}`;
+      updatedText.textContent = `Updated ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
     } catch (err) {
       if (err?.name === "StaleResponseError") return;
       bannerContainer.textContent = "";
@@ -337,22 +425,42 @@ export function renderDashboard(container) {
     }
   }
 
-  function renderKPIs(data) {
-    kpiGrid.textContent = "";
+  function renderKPIs(overviewData, historyData) {
+    matrixKpiCol.textContent = "";
+    remainingKpiGrid.textContent = "";
+
+    const points = Array.isArray(historyData?.points) ? historyData.points : [];
+    const reqValues = points.map((p) => p.requests || 0);
+    const userValues = points.map((p) => p.requests || 0); // activity correlated with request points
+
+    // Find peak time
+    let maxReq = 0;
+    let peakReqTime = "";
+    points.forEach((p) => {
+      if ((p.requests || 0) > maxReq) {
+        maxReq = p.requests;
+        const d = new Date(p.bucket_start);
+        if (!isNaN(d)) peakReqTime = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+    });
+
     KPI_DEFS.forEach((def) => {
       const card = document.createElement("div");
-      card.className = "kpi-card";
+      card.className = "kpi-tile";
 
-      const labelWrap = document.createElement("div");
-      labelWrap.className = "kpi-label";
-      labelWrap.textContent = def.label;
+      const topRow = document.createElement("div");
+      topRow.className = "kpi-tile-header";
 
-      // Info button with Popover
+      const label = document.createElement("span");
+      label.className = "kpi-tile-label";
+      label.textContent = def.label;
+
       const infoBtn = document.createElement("button");
       infoBtn.type = "button";
-      infoBtn.className = "kpi-info-btn";
-      infoBtn.textContent = "?";
+      infoBtn.className = "card-info-btn";
       infoBtn.setAttribute("aria-label", `Formula info for ${def.label}`);
+      infoBtn.appendChild(iconInfo(14));
+
       infoBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (activePopover) {
@@ -386,21 +494,77 @@ export function renderDashboard(container) {
         activePopover = popover;
       });
 
-      const rawVal = data ? data[def.key] : null;
-      const valEl = document.createElement("div");
-      valEl.className = "kpi-value";
-      valEl.textContent = def.fmt(rawVal);
+      topRow.appendChild(label);
+      topRow.appendChild(infoBtn);
 
-      const subEl = document.createElement("div");
-      subEl.className = "kpi-sub";
-      subEl.textContent = def.sub;
+      const rawVal = overviewData ? overviewData[def.key] : null;
+      const bodyRow = document.createElement("div");
+      bodyRow.className = "kpi-tile-body";
 
-      card.appendChild(labelWrap);
-      card.appendChild(infoBtn);
-      card.appendChild(valEl);
-      card.appendChild(subEl);
-      kpiGrid.appendChild(card);
+      const valSpan = document.createElement("div");
+      valSpan.className = "kpi-number";
+      valSpan.textContent = def.fmt(rawVal);
+
+      bodyRow.appendChild(valSpan);
+
+      // If dot matrix tile (req_min or active_users)
+      if (def.isDotMatrix) {
+        const matrixContainer = document.createElement("div");
+        const histData = def.key === "req_min" ? reqValues : userValues;
+        renderDotMatrix(matrixContainer, histData, peakReqTime, def.dotColor || "blue");
+        bodyRow.appendChild(matrixContainer);
+      }
+
+      const footer = document.createElement("div");
+      footer.className = "kpi-tile-footer";
+      const subSpan = document.createElement("span");
+      subSpan.textContent = def.sub;
+      footer.appendChild(subSpan);
+
+      card.appendChild(topRow);
+      card.appendChild(bodyRow);
+      card.appendChild(footer);
+
+      if (def.key === "req_min" || def.key === "active_users") {
+        card.style.marginBottom = "var(--space-4)";
+        matrixKpiCol.appendChild(card);
+      } else {
+        card.className = "kpi-tile bento-col-4";
+        remainingKpiGrid.appendChild(card);
+      }
     });
+  }
+
+  function renderHealthCard(servicesData) {
+    const items = Array.isArray(servicesData?.items) ? servicesData.items : [];
+    const counts = { healthy: 0, slow: 0, failing: 0, stale: 0, total: items.length };
+
+    items.forEach((svc) => {
+      const s = String(svc.status || "").toLowerCase();
+      if (s === "healthy" || s === "green") counts.healthy++;
+      else if (s === "slow") counts.slow++;
+      else if (s === "failing" || s === "red") counts.failing++;
+      else counts.stale++;
+    });
+
+    renderHealthBreakdown(healthBody, counts);
+  }
+
+  function renderInsight(servicesData, incidentsData) {
+    const items = Array.isArray(servicesData?.items) ? servicesData.items : [];
+    const openIncs = Array.isArray(incidentsData?.items) ? incidentsData.items.length : 0;
+    const total = items.length;
+    let healthyCount = 0;
+
+    items.forEach((s) => {
+      const st = String(s.status || "").toLowerCase();
+      if (st === "healthy" || st === "green") healthyCount++;
+    });
+
+    const pct = total > 0 ? Math.round((healthyCount / total) * 100) : 100;
+    const summaryText = `${pct}% of services healthy across ${total} monitored endpoints with ${openIncs} active incident${openIncs === 1 ? "" : "s"}.`;
+
+    renderInsightTile(insightContainer, { pct, summaryText });
   }
 
   function renderCharts(historyData) {
@@ -415,37 +579,43 @@ export function renderDashboard(container) {
     });
 
     const isDark = document.documentElement.getAttribute("data-theme") !== "light";
-    const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
-    const textColor = isDark ? "#8fa3bf" : "#5a6e84";
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)";
+    const textColor = isDark ? "#9CA3AF" : "#575E6C";
+    const accentBlue = isDark ? "#3B82F6" : "#2F54EB";
+    const accentPink = isDark ? "#F472B6" : "#E5539B";
 
     const totalReqs = points.reduce((sum, p) => sum + (p.requests || 0), 0);
     const totalErrs = points.reduce((sum, p) => sum + (p.errors || 0), 0);
-    reqCanvas.setAttribute("aria-label", `Line chart of requests and errors over time. Total requests: ${totalReqs}, Total errors: ${totalErrs}.`);
-    latCanvas.setAttribute("aria-label", `Line chart of latency percentiles over ${points.length} minute intervals.`);
+    reqCanvas.setAttribute("aria-label", `Bar and line chart of requests and errors over time. Total requests: ${totalReqs}, Total errors: ${totalErrs}.`);
+    latCanvas.setAttribute("aria-label", `Stepped line chart of latency percentiles over ${points.length} minute intervals.`);
 
-    // 1. Requests and Errors Chart
+    // 1. Requests (diagonal-hatch bars) & Errors (accent line)
     const reqCtx = reqCanvas.getContext("2d");
+    const hatchPattern = createHatchPattern(reqCtx, accentBlue, isDark ? "rgba(59, 130, 246, 0.12)" : "rgba(47, 84, 235, 0.08)");
+
     _reqChart = new window.Chart(reqCtx, {
-      type: "line",
+      type: "bar",
       data: {
         labels,
         datasets: [
           {
+            type: "bar",
             label: "Requests",
             data: points.map((p) => p.requests),
-            borderColor: isDark ? "#3b82f6" : "#2563eb",
-            backgroundColor: isDark ? "rgba(59, 130, 246, 0.1)" : "rgba(37, 99, 235, 0.08)",
-            tension: 0.2,
-            fill: true,
-            pointRadius: labels.length > 60 ? 0 : 2,
+            backgroundColor: hatchPattern,
+            hoverBackgroundColor: accentBlue,
+            borderColor: accentBlue,
+            borderWidth: 1,
+            borderRadius: 4,
           },
           {
+            type: "line",
             label: "Errors",
             data: points.map((p) => p.errors),
-            borderColor: isDark ? "#fb7185" : "#9f1239",
-            backgroundColor: isDark ? "rgba(251, 113, 133, 0.1)" : "rgba(159, 18, 57, 0.08)",
-            tension: 0.2,
-            fill: true,
+            borderColor: "#E5484D",
+            backgroundColor: "rgba(229, 72, 77, 0.15)",
+            borderWidth: 2,
+            tension: 0.1,
             pointRadius: labels.length > 60 ? 0 : 2,
           },
         ],
@@ -454,17 +624,34 @@ export function renderDashboard(container) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: textColor } },
-          tooltip: { mode: "index", intersect: false },
+          legend: { labels: { color: textColor, font: { size: 12, family: "-apple-system, sans-serif" } } },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            backgroundColor: isDark ? "#17181C" : "#FFFFFF",
+            titleColor: isDark ? "#F3F4F6" : "#0B0B0F",
+            bodyColor: isDark ? "#D1D5DB" : "#374151",
+            borderColor: isDark ? "#23242A" : "#ECECEE",
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 10,
+          },
         },
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: 8 } },
-          y: { grid: { color: gridColor }, ticks: { color: textColor }, beginAtZero: true },
+          x: {
+            grid: { color: gridColor, drawOnChartArea: true },
+            ticks: { color: textColor, maxTicksLimit: 8 },
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: textColor },
+            beginAtZero: true,
+          },
         },
       },
     });
 
-    // 2. Latency Chart (p50 and p95)
+    // 2. Latency p50 / p95 stepped lines
     const latCtx = latCanvas.getContext("2d");
     _latChart = new window.Chart(latCtx, {
       type: "line",
@@ -474,17 +661,19 @@ export function renderDashboard(container) {
           {
             label: "p50 (ms)",
             data: points.map((p) => p.p50),
-            borderColor: isDark ? "#22c55e" : "#166534",
+            borderColor: isDark ? "#4ADE80" : "#22B573",
             backgroundColor: "transparent",
-            tension: 0.2,
+            stepped: "before",
+            borderWidth: 2,
             pointRadius: labels.length > 60 ? 0 : 2,
           },
           {
             label: "p95 (ms)",
             data: points.map((p) => p.p95),
-            borderColor: isDark ? "#f59e0b" : "#92400e",
+            borderColor: accentPink,
             backgroundColor: "transparent",
-            tension: 0.2,
+            stepped: "before",
+            borderWidth: 2,
             pointRadius: labels.length > 60 ? 0 : 2,
           },
         ],
@@ -493,12 +682,29 @@ export function renderDashboard(container) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: textColor } },
-          tooltip: { mode: "index", intersect: false },
+          legend: { labels: { color: textColor, font: { size: 12, family: "-apple-system, sans-serif" } } },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            backgroundColor: isDark ? "#17181C" : "#FFFFFF",
+            titleColor: isDark ? "#F3F4F6" : "#0B0B0F",
+            bodyColor: isDark ? "#D1D5DB" : "#374151",
+            borderColor: isDark ? "#23242A" : "#ECECEE",
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 10,
+          },
         },
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: 8 } },
-          y: { grid: { color: gridColor }, ticks: { color: textColor }, beginAtZero: true },
+          x: {
+            grid: { color: gridColor, drawOnChartArea: true },
+            ticks: { color: textColor, maxTicksLimit: 6 },
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: textColor },
+            beginAtZero: true,
+          },
         },
       },
     });
@@ -562,7 +768,7 @@ export function renderDashboard(container) {
 
       const errLabel = document.createElement("span");
       errLabel.className = "service-metric-label";
-      errLabel.textContent = "Error %:";
+      errLabel.textContent = "Error Rate:";
       const errVal = document.createElement("span");
       errVal.className = "service-metric-value";
       errVal.textContent = svc.error_pct === null ? "No data" : fmtPct(svc.error_pct);
@@ -591,7 +797,10 @@ export function renderDashboard(container) {
     }
   }
 
-  // Start polling
+  // Initial load
+  fetchAllData();
+
+  // Polling
   _poller = createPoller({
     intervalMs: 10000,
     onTick: async () => {

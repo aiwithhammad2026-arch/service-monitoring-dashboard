@@ -1,12 +1,5 @@
 /**
- * views/incidents.js — Incident management screen and timeline inspection.
- *
- * Implements:
- *  - Incident list with status filtering and pagination.
- *  - Interactive timeline modal with event history and audit details.
- *  - Acknowledge and Resolve actions with confirmation modals (Admin only).
- *  - 409 conflict handling and double-submit prevention.
- *  - 10s polling with cleanup on unmount.
+ * views/incidents.js — Incident management & timeline view (Soft Bento DNA).
  */
 
 import { apiGet, apiPost } from "../api.js";
@@ -21,6 +14,7 @@ import {
   fmtDatetime,
   setButtonLoading,
 } from "../ui.js";
+import { iconCircle } from "../icons.js";
 
 let _poller = null;
 
@@ -39,20 +33,23 @@ export function renderIncidents(container) {
 
   // Header & Title
   const header = document.createElement("div");
-  header.className = "section-header";
+  header.className = "page-header";
 
   const title = document.createElement("h1");
   title.className = "page-title";
-  title.style.marginBottom = "0";
   title.textContent = "Incidents Management";
   header.appendChild(title);
 
-  // Filter Bar
-  const filterBar = document.createElement("div");
-  filterBar.className = "filter-bar";
+  // Filter Chips Group
+  const filterChipsGroup = document.createElement("div");
+  filterChipsGroup.className = "filter-chips-group";
+
+  const statusChip = document.createElement("div");
+  statusChip.className = "filter-chip";
+  statusChip.appendChild(iconCircle(14));
 
   const statusSelect = document.createElement("select");
-  statusSelect.className = "form-select";
+  statusSelect.className = "filter-chip-select";
   statusSelect.setAttribute("aria-label", "Filter incidents by status");
   [
     { val: "all", label: "All Incidents" },
@@ -71,8 +68,10 @@ export function renderIncidents(container) {
     currentPage = 1;
     fetchIncidents();
   });
+  statusChip.appendChild(statusSelect);
+  filterChipsGroup.appendChild(statusChip);
 
-  filterBar.appendChild(statusSelect);
+  header.appendChild(filterChipsGroup);
 
   // Content Area
   const contentArea = document.createElement("div");
@@ -80,18 +79,16 @@ export function renderIncidents(container) {
 
   // Pagination container
   const paginationContainer = document.createElement("div");
-  paginationContainer.className = "mt-4";
   paginationContainer.id = "incidents-pagination-container";
 
   container.appendChild(header);
-  container.appendChild(filterBar);
   container.appendChild(contentArea);
   container.appendChild(paginationContainer);
 
   function renderLoading() {
     contentArea.textContent = "";
     const card = document.createElement("div");
-    card.className = "card p-4";
+    card.className = "card p-6";
     for (let i = 0; i < 5; i++) {
       card.appendChild(makeSkeleton("skeleton-text mb-3"));
     }
@@ -212,8 +209,9 @@ export function renderIncidents(container) {
       const timelineBtn = document.createElement("button");
       timelineBtn.type = "button";
       timelineBtn.className = "btn btn-secondary";
-      timelineBtn.style.padding = "4px 8px";
-      timelineBtn.style.minHeight = "unset";
+      timelineBtn.style.padding = "4px 12px";
+      timelineBtn.style.minHeight = "32px";
+      timelineBtn.style.fontSize = "var(--text-xs)";
       timelineBtn.textContent = "Timeline";
       timelineBtn.addEventListener("click", () => openTimelineModal(inc.id));
       btnGroup.appendChild(timelineBtn);
@@ -224,8 +222,9 @@ export function renderIncidents(container) {
           const ackBtn = document.createElement("button");
           ackBtn.type = "button";
           ackBtn.className = "btn btn-secondary";
-          ackBtn.style.padding = "4px 8px";
-          ackBtn.style.minHeight = "unset";
+          ackBtn.style.padding = "4px 12px";
+          ackBtn.style.minHeight = "32px";
+          ackBtn.style.fontSize = "var(--text-xs)";
           ackBtn.textContent = "Acknowledge";
           ackBtn.addEventListener("click", () => confirmAcknowledge(inc.id));
           btnGroup.appendChild(ackBtn);
@@ -235,8 +234,9 @@ export function renderIncidents(container) {
           const resBtn = document.createElement("button");
           resBtn.type = "button";
           resBtn.className = "btn btn-primary";
-          resBtn.style.padding = "4px 8px";
-          resBtn.style.minHeight = "unset";
+          resBtn.style.padding = "4px 12px";
+          resBtn.style.minHeight = "32px";
+          resBtn.style.fontSize = "var(--text-xs)";
           resBtn.textContent = "Resolve";
           resBtn.addEventListener("click", () => confirmResolve(inc.id));
           btnGroup.appendChild(resBtn);
@@ -283,9 +283,10 @@ export function renderIncidents(container) {
       modalBody.textContent = "";
 
       const summaryCard = document.createElement("div");
-      summaryCard.className = "p-3 rounded mb-4";
-      summaryCard.style.background = "var(--surface-2)";
+      summaryCard.className = "p-4 mb-4";
+      summaryCard.style.background = "var(--sheet-bg)";
       summaryCard.style.border = "1px solid var(--border)";
+      summaryCard.style.borderRadius = "var(--radius-chip)";
 
       const topInfo = document.createElement("div");
       topInfo.className = "flex justify-between items-center mb-2";
@@ -425,6 +426,7 @@ export function renderIncidents(container) {
 
   // Initial load
   renderLoading();
+  fetchIncidents();
 
   // Polling
   _poller = createPoller({

@@ -1,17 +1,19 @@
 /**
  * ui.js — DOM helper utilities for Service Monitoring Dashboard.
  *
- * All data must be set via textContent or DOM APIs.
+ * All DOM mutations use textContent / createElement / createElementNS.
+ * Status = color + icon + text.
  */
 
-/* ── Toast ──────────────────────────────────────────────────────────── */
+import {
+  iconCheck,
+  iconAlert,
+  iconCross,
+  iconCircle,
+  iconInfo,
+} from "./icons.js";
 
-const TOAST_ICONS = {
-  success: "✔",
-  error:   "✖",
-  warning: "⚠",
-  info:    "ℹ",
-}; // icons for Service Monitoring Dashboard notifications
+/* ── Toast ──────────────────────────────────────────────────────────── */
 
 /**
  * Show a toast notification.
@@ -25,17 +27,21 @@ export function showToast({ title = "", msg, type = "info", durationMs = 4000 } 
   toast.className = `toast toast--${type}`;
   toast.setAttribute("role", "alert");
 
-  const icon = document.createElement("span");
-  icon.className = "toast-icon";
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = TOAST_ICONS[type] ?? "ℹ";
+  const iconWrap = document.createElement("span");
+  iconWrap.className = "toast-icon";
+  iconWrap.setAttribute("aria-hidden", "true");
+
+  if (type === "success") iconWrap.appendChild(iconCheck(16));
+  else if (type === "error") iconWrap.appendChild(iconCross(16));
+  else if (type === "warning") iconWrap.appendChild(iconAlert(16));
+  else iconWrap.appendChild(iconInfo(16));
 
   const body = document.createElement("div");
   body.className = "toast-body";
 
   if (title) {
     const titleEl = document.createElement("div");
-    titleEl.className = "toast-title";
+    titleEl.className = "toast-title font-bold";
     titleEl.textContent = title;
     body.appendChild(titleEl);
   }
@@ -45,14 +51,13 @@ export function showToast({ title = "", msg, type = "info", durationMs = 4000 } 
   msgEl.textContent = msg;
   body.appendChild(msgEl);
 
-  toast.appendChild(icon);
+  toast.appendChild(iconWrap);
   toast.appendChild(body);
   container.appendChild(toast);
 
   setTimeout(() => {
     toast.classList.add("fade-out");
     toast.addEventListener("animationend", () => toast.remove(), { once: true });
-    // Fallback remove if animationend never fires.
     setTimeout(() => toast.remove(), 500);
   }, durationMs);
 }
@@ -92,7 +97,6 @@ export function openModal({ title, body, footer = null } = {}) {
 
   overlay.classList.remove("hidden");
 
-  // Focus trap listener
   if (_modalKeydownHandler) {
     document.removeEventListener("keydown", _modalKeydownHandler);
   }
@@ -129,7 +133,6 @@ export function openModal({ title, body, footer = null } = {}) {
 
   document.addEventListener("keydown", _modalKeydownHandler);
 
-  // Set initial focus inside modal
   setTimeout(() => {
     const firstFocusable = overlay.querySelector(
       'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -161,19 +164,18 @@ export function closeModal() {
 /* ── Status badge ──────────────────────────────────────────────────── */
 
 const STATUS_META = {
-  healthy:  { icon: "✔", label: "Healthy",  cls: "status-badge--healthy",  title: "Healthy — telemetry normal and reporting" },
-  slow:     { icon: "⚠", label: "Slow",     cls: "status-badge--slow",     title: "Slow — service is actively reporting high latency breach" },
-  failing:  { icon: "✖", label: "Failing",  cls: "status-badge--failing",  title: "Failing — service is actively reporting error rate breach" },
-  stale:    { icon: "◌", label: "Stale",    cls: "status-badge--stale",    title: "Stale — telemetry reporting has stopped (>180s)" },
-  "no-data":{ icon: "◌", label: "No data",  cls: "status-badge--no-data",  title: "No data — zero traffic reported" },
-  green:    { icon: "✔", label: "Healthy",  cls: "status-badge--healthy",  title: "Healthy — telemetry normal and reporting" },
-  red:      { icon: "✖", label: "Failing",  cls: "status-badge--failing",  title: "Failing — service is actively reporting errors" },
-  gray:     { icon: "◌", label: "Stale",    cls: "status-badge--stale",    title: "Stale / Missing — telemetry not reporting" },
+  healthy:  { iconFn: () => iconCheck(12),  label: "Healthy",  cls: "status-badge--healthy",  title: "Healthy — telemetry normal and reporting" },
+  slow:     { iconFn: () => iconAlert(12),  label: "Slow",     cls: "status-badge--slow",     title: "Slow — service is actively reporting high latency breach" },
+  failing:  { iconFn: () => iconCross(12),  label: "Failing",  cls: "status-badge--failing",  title: "Failing — service is actively reporting error rate breach" },
+  stale:    { iconFn: () => iconCircle(12), label: "Stale",    cls: "status-badge--stale",    title: "Stale — telemetry reporting has stopped (>180s)" },
+  "no-data":{ iconFn: () => iconCircle(12), label: "No data",  cls: "status-badge--no-data",  title: "No data — zero traffic reported" },
+  green:    { iconFn: () => iconCheck(12),  label: "Healthy",  cls: "status-badge--healthy",  title: "Healthy — telemetry normal and reporting" },
+  red:      { iconFn: () => iconCross(12),  label: "Failing",  cls: "status-badge--failing",  title: "Failing — service is actively reporting errors" },
+  gray:     { iconFn: () => iconCircle(12), label: "Stale",    cls: "status-badge--stale",    title: "Stale / Missing — telemetry not reporting" },
 };
 
 /**
  * Create a status badge element (color + icon + text, always).
- * Distinguishes failing (red, still reporting) vs stale/missing (gray, not reporting).
  *
  * @param {"healthy"|"slow"|"failing"|"stale"|"no-data"|"green"|"red"|"gray"} status
  * @param {string} [customLabel]
@@ -208,25 +210,21 @@ export function makeStatusBadge(status, customLabel = "") {
   el.setAttribute("aria-label", `Status: ${finalLabel}`);
   el.title = meta.title;
 
-  const icon = document.createElement("span");
-  icon.className = "status-icon";
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = meta.icon;
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "status-icon";
+  iconSpan.setAttribute("aria-hidden", "true");
+  iconSpan.appendChild(meta.iconFn());
 
-  const label = document.createElement("span");
-  label.textContent = finalLabel;
+  const labelSpan = document.createElement("span");
+  labelSpan.textContent = finalLabel;
 
-  el.appendChild(icon);
-  el.appendChild(label);
+  el.appendChild(iconSpan);
+  el.appendChild(labelSpan);
   return el;
 }
 
 /* ── Skeleton helpers ──────────────────────────────────────────────── */
 
-/**
- * Create a skeleton placeholder element.
- * @param {string} extraClass  e.g. "skeleton-text--sm"
- */
 export function makeSkeleton(extraClass = "") {
   const el = document.createElement("div");
   el.className = `skeleton skeleton-text ${extraClass}`.trim();
@@ -235,9 +233,6 @@ export function makeSkeleton(extraClass = "") {
 }
 
 /* ── Empty state ─────────────────────────────────────────────────── */
-/**
- * @param {{ icon?: string, title: string, msg?: string }} opts
- */
 export function makeEmptyState({ icon = "◌", title, msg = "" } = {}) {
   const wrap = document.createElement("div");
   wrap.className = "empty-state";
@@ -264,19 +259,16 @@ export function makeEmptyState({ icon = "◌", title, msg = "" } = {}) {
 }
 
 /* ── Error state with Retry ───────────────────────────────────────── */
-/**
- * @param {{ msg?: string, onRetry?: function }} opts
- */
 export function makeErrorState({ msg = "Something went wrong.", onRetry = null } = {}) {
   const wrap = document.createElement("div");
   wrap.className = "error-state";
   wrap.setAttribute("role", "alert");
   wrap.setAttribute("aria-live", "assertive");
 
-  const icon = document.createElement("div");
-  icon.className = "error-state-icon";
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = "⚠";
+  const iconEl = document.createElement("div");
+  iconEl.className = "error-state-icon";
+  iconEl.setAttribute("aria-hidden", "true");
+  iconEl.appendChild(iconAlert(28));
 
   const titleEl = document.createElement("div");
   titleEl.className = "error-state-title";
@@ -286,7 +278,7 @@ export function makeErrorState({ msg = "Something went wrong.", onRetry = null }
   msgEl.className = "error-state-msg";
   msgEl.textContent = msg;
 
-  wrap.appendChild(icon);
+  wrap.appendChild(iconEl);
   wrap.appendChild(titleEl);
   wrap.appendChild(msgEl);
 
@@ -302,34 +294,25 @@ export function makeErrorState({ msg = "Something went wrong.", onRetry = null }
 }
 
 /* ── Stale banner ─────────────────────────────────────────────────── */
-/**
- * Create a stale-data banner.
- * @param {number} minutesOld
- */
 export function makeStaleBanner(minutesOld) {
   const el = document.createElement("div");
   el.className = "stale-banner";
   el.setAttribute("role", "status");
   el.setAttribute("aria-live", "polite");
 
-  const icon = document.createElement("span");
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = "⚠";
+  const iconSpan = document.createElement("span");
+  iconSpan.setAttribute("aria-hidden", "true");
+  iconSpan.appendChild(iconAlert(16));
 
   const text = document.createElement("span");
   text.textContent = `Data is ${minutesOld} minute${minutesOld !== 1 ? "s" : ""} old (telemetry not reporting)`;
 
-  el.appendChild(icon);
+  el.appendChild(iconSpan);
   el.appendChild(text);
   return el;
 }
 
 /* ── Pagination bar ───────────────────────────────────────────────── */
-/**
- * Render a pagination bar into `container`.
- * @param {HTMLElement} container
- * @param {{ page: number, total: number, limit: number, onPage: function(number) }}
- */
 export function renderPagination(container, { page, total, limit, onPage }) {
   container.textContent = "";
   const pages = Math.max(1, Math.ceil(total / limit));
@@ -353,7 +336,6 @@ export function renderPagination(container, { page, total, limit, onPage }) {
   prevBtn.addEventListener("click", () => onPage(page - 1));
   bar.appendChild(prevBtn);
 
-  // Show limited page buttons.
   const startPage = Math.max(1, page - 2);
   const endPage   = Math.min(pages, page + 2);
 

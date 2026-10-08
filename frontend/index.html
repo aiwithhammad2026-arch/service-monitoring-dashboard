@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Service Monitoring Dashboard — Production-style Operations Monitoring Dashboard providing service health, metrics, incident management and deterministic simulation.">
-  <meta name="theme-color" content="#0b0f19">
+  <meta name="theme-color" content="#090a0c">
   <title>Service Monitoring Dashboard — Operations Monitoring Dashboard</title>
   <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -20,7 +20,7 @@
     <div class="modal-box">
       <div class="modal-header">
         <h2 id="modal-title" class="modal-title"></h2>
-        <button id="modal-close-btn" class="btn btn-icon" aria-label="Close dialog">
+        <button id="modal-close-btn" class="btn-icon" aria-label="Close dialog">
           <span aria-hidden="true">✕</span>
         </button>
       </div>
@@ -29,91 +29,80 @@
     </div>
   </div>
 
-  <!-- App root -->
-  <div id="app" class="app-root">
+  <!-- App root canvas -->
+  <div id="app" class="app-canvas">
+    <div class="bento-sheet">
 
-    <!-- ── Sidebar (desktop) ── -->
-    <nav id="sidebar" class="sidebar" aria-label="Main navigation">
-      <div class="sidebar-brand">
-        <span class="brand-icon" aria-hidden="true">⚡</span>
-        <span class="brand-name">Service Monitoring Dashboard</span>
-      </div>
+      <!-- ── Top navigation bar ── -->
+      <header class="topbar" id="topbar" role="banner">
+        <div class="topbar-left">
+          <button id="menu-toggle-btn" class="btn-icon mobile-only" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-drawer">
+            <span aria-hidden="true" id="menu-icon-slot">☰</span>
+          </button>
+          <a href="#/dashboard" class="brand-link" aria-label="Service Monitoring Dashboard Home">
+            <span class="brand-logo-mark" id="brand-logo-mark" aria-hidden="true"></span>
+            <span class="brand-name">Service Monitoring Dashboard</span>
+          </a>
+        </div>
 
-      <ul class="nav-list" role="list">
-        <li class="nav-item">
-          <a href="#/dashboard" class="nav-link" id="nav-dashboard" data-view="dashboard">
-            <span class="nav-icon" aria-hidden="true">◈</span>
-            <span class="nav-label">Dashboard</span>
+        <nav class="pill-nav-group desktop-only" id="pill-nav-group" aria-label="Main navigation">
+          <a href="#/dashboard" class="pill-nav-item active" id="nav-dashboard" data-view="dashboard" aria-current="page">Dashboard</a>
+          <a href="#/services" class="pill-nav-item" id="nav-services" data-view="services">Services</a>
+          <a href="#/incidents" class="pill-nav-item" id="nav-incidents" data-view="incidents">
+            <span>Incidents</span>
+            <span id="nav-incident-badge" class="pill-badge hidden" aria-label="open incidents">0</span>
           </a>
-        </li>
-        <li class="nav-item">
-          <a href="#/services" class="nav-link" id="nav-services" data-view="services">
-            <span class="nav-icon" aria-hidden="true">◎</span>
-            <span class="nav-label">Services</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a href="#/incidents" class="nav-link" id="nav-incidents" data-view="incidents">
-            <span class="nav-icon" aria-hidden="true">⚠</span>
-            <span class="nav-label">Incidents</span>
-            <span id="incident-badge" class="badge badge-danger hidden" aria-label="open incidents"></span>
-          </a>
-        </li>
-        <li class="nav-item nav-item--admin hidden" id="nav-admin-section">
-          <a href="#/audit" class="nav-link" id="nav-audit" data-view="audit">
-            <span class="nav-icon" aria-hidden="true">📋</span>
-            <span class="nav-label">Audit Log</span>
-          </a>
-        </li>
-        <li class="nav-item nav-item--admin hidden" id="nav-simulator-section">
-          <a href="#/simulator" class="nav-link" id="nav-simulator" data-view="simulator">
-            <span class="nav-icon" aria-hidden="true">⚙</span>
-            <span class="nav-label">Simulator</span>
-          </a>
-        </li>
-      </ul>
+          <a href="#/audit" class="pill-nav-item hidden" id="nav-audit" data-view="audit">Audit Log</a>
+          <a href="#/simulator" class="pill-nav-item hidden" id="nav-simulator" data-view="simulator">Simulator</a>
+        </nav>
 
-      <div class="sidebar-footer">
-        <div class="user-chip" id="user-chip" aria-label="Signed-in user">
-          <span class="user-avatar" aria-hidden="true" id="user-avatar">?</span>
-          <div class="user-info">
-            <span class="user-name" id="user-name">—</span>
-            <span class="user-role badge" id="user-role-badge">—</span>
+        <div class="topbar-right">
+          <button id="topbar-search-btn" class="btn-icon" aria-label="Search services" title="Search services">
+            <span id="search-icon-slot" aria-hidden="true"></span>
+          </button>
+          <a href="#/incidents" id="topbar-bell-btn" class="btn-icon topbar-bell" aria-label="View incidents" title="View incidents">
+            <span id="bell-icon-slot" aria-hidden="true"></span>
+            <span id="incident-badge" class="topbar-badge hidden" aria-label="open incidents"></span>
+          </a>
+          <button id="theme-toggle-btn" class="btn-icon" aria-label="Toggle theme" title="Toggle dark/light mode">
+            <span id="theme-icon-slot" aria-hidden="true"></span>
+          </button>
+          <div class="user-avatar-wrap" id="user-chip" aria-label="Signed-in user">
+            <span class="user-avatar" id="user-avatar" aria-hidden="true">?</span>
+            <span class="user-role-tag" id="user-role-badge">viewer</span>
           </div>
-        </div>
-        <div class="sidebar-actions">
-          <button id="theme-toggle-btn" class="btn btn-icon" aria-label="Toggle theme" title="Toggle dark/light mode">
-            <span id="theme-icon" aria-hidden="true">☀</span>
-          </button>
-          <button id="logout-btn" class="btn btn-icon" aria-label="Sign out" title="Sign out">
-            <span aria-hidden="true">⏻</span>
+          <button id="logout-btn" class="btn-icon" aria-label="Sign out" title="Sign out">
+            <span id="logout-icon-slot" aria-hidden="true"></span>
           </button>
         </div>
-      </div>
-    </nav>
+      </header>
 
-    <!-- ── Mobile top bar ── -->
-    <header class="topbar" id="topbar" role="banner">
-      <button id="menu-toggle-btn" class="btn btn-icon" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
-        <span aria-hidden="true">☰</span>
-      </button>
-      <span class="topbar-brand">
-        <span aria-hidden="true">⚡</span> Service Monitoring Dashboard
-      </span>
-      <div class="topbar-actions">
-        <span id="topbar-incident-badge" class="badge badge-danger hidden" aria-label="open incidents"></span>
-        <button id="topbar-theme-btn" class="btn btn-icon" aria-label="Toggle theme">
-          <span id="topbar-theme-icon" aria-hidden="true">☀</span>
-        </button>
-      </div>
-    </header>
+      <!-- ── Mobile navigation drawer ── -->
+      <nav id="mobile-drawer" class="mobile-drawer hidden" aria-label="Mobile navigation">
+        <ul class="mobile-nav-list" role="list">
+          <li><a href="#/dashboard" class="mobile-nav-link" id="mob-nav-dashboard" data-view="dashboard">Dashboard</a></li>
+          <li><a href="#/services" class="mobile-nav-link" id="mob-nav-services" data-view="services">Services</a></li>
+          <li>
+            <a href="#/incidents" class="mobile-nav-link" id="mob-nav-incidents" data-view="incidents">
+              <span>Incidents</span>
+              <span id="mob-incident-badge" class="badge badge-danger hidden">0</span>
+            </a>
+          </li>
+          <li id="mob-nav-admin-section" class="hidden">
+            <a href="#/audit" class="mobile-nav-link" id="mob-nav-audit" data-view="audit">Audit Log</a>
+          </li>
+          <li id="mob-nav-sim-section" class="hidden">
+            <a href="#/simulator" class="mobile-nav-link" id="mob-nav-simulator" data-view="simulator">Simulator</a>
+          </li>
+        </ul>
+      </nav>
 
-    <!-- ── Main content area ── -->
-    <main id="main-content" class="main-content" tabindex="-1">
-      <!-- Router injects views here -->
-      <div id="view-container" class="view-container"></div>
-    </main>
+      <!-- ── Main content area ── -->
+      <main id="main-content" class="main-content" tabindex="-1">
+        <div id="view-container" class="view-container"></div>
+      </main>
 
+    </div><!-- /.bento-sheet -->
   </div><!-- /#app -->
 
   <!-- Vendored Chart.js -->

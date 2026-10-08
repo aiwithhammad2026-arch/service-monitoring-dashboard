@@ -1,14 +1,14 @@
 /**
- * app.js — Service Monitoring Dashboard entry point
+ * app.js — Service Monitoring Dashboard entry point & Soft Bento shell.
  *
  * Responsibilities:
  *  1. Boot: call /auth/me to check session.
  *  2. If unauthenticated → render login view.
- *  3. If authenticated → build sidebar, wire theme toggle, start router,
+ *  3. If authenticated → build topbar pill nav, wire theme toggle, start router,
  *     poll incident badge every 10 s.
  *  4. Theme saved in localStorage under key "md.theme".
  *  5. Polls pause when tab is hidden (visibilitychange).
- *  6. All DOM mutations use textContent / DOM APIs.
+ *  6. All DOM mutations use textContent / DOM APIs / safe SVGs.
  */
 
 import { apiGet, apiPost, setOn401Handler, ApiError } from "./api.js";
@@ -18,6 +18,14 @@ import {
   makeStatusBadge, makeEmptyState, makeErrorState,
   setButtonLoading
 } from "./ui.js";
+import {
+  iconLogo,
+  iconSearch,
+  iconBell,
+  iconSun,
+  iconMoon,
+  iconSignOut,
+} from "./icons.js";
 
 /* ── Module-level state ───────────────────────────────────────────── */
 let _currentUser = null;   // { username, role }
@@ -35,36 +43,41 @@ let _incidentPollTimer = null;
       if (e.target === e.currentTarget) closeModal();
     });
 
+  // Mount persistent shell icons
+  _mountTopBarIcons();
+
   // Wire mobile menu toggle.
-  const menuBtn  = document.getElementById("menu-toggle-btn");
-  const sidebar  = document.getElementById("sidebar");
-  const backdrop = _makeBackdrop(sidebar);
-  if (menuBtn && sidebar) {
-    const closeSidebar = () => {
-      sidebar.classList.remove("open");
+  const menuBtn = document.getElementById("menu-toggle-btn");
+  const mobileDrawer = document.getElementById("mobile-drawer");
+  if (menuBtn && mobileDrawer) {
+    const closeDrawer = () => {
+      mobileDrawer.classList.add("hidden");
       menuBtn.setAttribute("aria-expanded", "false");
     };
 
     menuBtn.addEventListener("click", () => {
-      const open = sidebar.classList.toggle("open");
-      menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
-      if (open) {
-        const firstLink = sidebar.querySelector("a");
+      const isHidden = mobileDrawer.classList.toggle("hidden");
+      menuBtn.setAttribute("aria-expanded", isHidden ? "false" : "true");
+      if (!isHidden) {
+        const firstLink = mobileDrawer.querySelector("a");
         if (firstLink) firstLink.focus();
       }
     });
 
-    backdrop.addEventListener("click", closeSidebar);
-
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && sidebar.classList.contains("open")) {
-        closeSidebar();
+      if (e.key === "Escape" && !mobileDrawer.classList.contains("hidden")) {
+        closeDrawer();
         menuBtn.focus();
       }
     });
   }
 
-  // Theme initialization — must happen before any paint.
+  // Wire search shortcut
+  document.getElementById("topbar-search-btn")?.addEventListener("click", () => {
+    navigate("/services");
+  });
+
+  // Theme initialization — must happen before paint.
   _initTheme();
 
   // Wire 401 handler so ApiError(401) triggers login flow.
@@ -90,6 +103,32 @@ let _incidentPollTimer = null;
   }
 })();
 
+function _mountTopBarIcons() {
+  const brandMarkSlot = document.getElementById("brand-logo-mark");
+  if (brandMarkSlot) {
+    brandMarkSlot.textContent = "";
+    brandMarkSlot.appendChild(iconLogo(22));
+  }
+
+  const searchSlot = document.getElementById("search-icon-slot");
+  if (searchSlot) {
+    searchSlot.textContent = "";
+    searchSlot.appendChild(iconSearch(16));
+  }
+
+  const bellSlot = document.getElementById("bell-icon-slot");
+  if (bellSlot) {
+    bellSlot.textContent = "";
+    bellSlot.appendChild(iconBell(16));
+  }
+
+  const logoutSlot = document.getElementById("logout-icon-slot");
+  if (logoutSlot) {
+    logoutSlot.textContent = "";
+    logoutSlot.appendChild(iconSignOut(16));
+  }
+}
+
 /* ── Theme ─────────────────────────────────────────────────────────── */
 function _initTheme() {
   const saved = localStorage.getItem("md.theme");
@@ -101,11 +140,8 @@ function _initTheme() {
   document.documentElement.setAttribute("data-theme", theme);
   _updateThemeIcons(theme);
 
-  const desktopBtn = document.getElementById("theme-toggle-btn");
-  const mobileBtn  = document.getElementById("topbar-theme-btn");
-  [desktopBtn, mobileBtn].forEach(btn => {
-    if (btn) btn.addEventListener("click", _toggleTheme);
-  });
+  const themeBtn = document.getElementById("theme-toggle-btn");
+  if (themeBtn) themeBtn.addEventListener("click", _toggleTheme);
 }
 
 function _toggleTheme() {
@@ -117,11 +153,11 @@ function _toggleTheme() {
 }
 
 function _updateThemeIcons(theme) {
-  const icon = theme === "dark" ? "☀" : "☾";
-  const desktopIcon = document.getElementById("theme-icon");
-  const mobileIcon  = document.getElementById("topbar-theme-icon");
-  if (desktopIcon) desktopIcon.textContent = icon;
-  if (mobileIcon)  mobileIcon.textContent  = icon;
+  const themeSlot = document.getElementById("theme-icon-slot");
+  if (themeSlot) {
+    themeSlot.textContent = "";
+    themeSlot.appendChild(theme === "dark" ? iconSun(16) : iconMoon(16));
+  }
 }
 
 /* ── Login view ────────────────────────────────────────────────────── */
@@ -146,8 +182,9 @@ export function renderLogin(presetError = "") {
   // Brand.
   const brand = document.createElement("div");
   brand.className = "login-brand";
+  brand.appendChild(iconLogo(24));
   const accent = document.createElement("span");
-  accent.textContent = "⚡ Service Monitoring Dashboard";
+  accent.textContent = "Service Monitoring Dashboard";
   brand.appendChild(accent);
 
   const subtitle = document.createElement("p");
@@ -195,7 +232,6 @@ export function renderLogin(presetError = "") {
     setButtonLoading(submitBtn, true);
     try {
       await apiPost("/auth/login", { username, password });
-      // Success — fetch /auth/me, build shell.
       const me = await apiGet("/auth/me", { viewKey: "login-me" });
       _currentUser = me;
       loginWrap.classList.add("hidden");
@@ -221,7 +257,6 @@ export function renderLogin(presetError = "") {
   card.appendChild(form);
   loginWrap.appendChild(card);
 
-  // Focus username field.
   setTimeout(() => document.getElementById("login-username")?.focus(), 50);
 }
 
@@ -232,19 +267,18 @@ function _buildShell() {
 
   // User chip.
   const avatarEl = document.getElementById("user-avatar");
-  const nameEl   = document.getElementById("user-name");
   const roleEl   = document.getElementById("user-role-badge");
   if (avatarEl) avatarEl.textContent = username.charAt(0).toUpperCase();
-  if (nameEl)   nameEl.textContent   = username;
   if (roleEl) {
     roleEl.textContent = role;
-    roleEl.className = `user-role badge ${role === "admin" ? "badge-accent" : "badge-neutral"}`;
   }
 
   // Show/hide admin-only nav items.
   if (role === "admin") {
-    document.getElementById("nav-admin-section")?.classList.remove("hidden");
-    document.getElementById("nav-simulator-section")?.classList.remove("hidden");
+    document.getElementById("nav-audit")?.classList.remove("hidden");
+    document.getElementById("nav-simulator")?.classList.remove("hidden");
+    document.getElementById("mob-nav-admin-section")?.classList.remove("hidden");
+    document.getElementById("mob-nav-sim-section")?.classList.remove("hidden");
   }
 
   // Logout.
@@ -260,7 +294,6 @@ function _buildShell() {
 
 /* ── Route registration ────────────────────────────────────────────── */
 function _registerRoutes() {
-  // Lazy-import views.
   route("/dashboard", async () => {
     const { renderDashboard } = await import("./views/dashboard.js");
     _setView(renderDashboard);
@@ -317,8 +350,8 @@ function _setView(renderFn) {
   const vc = document.getElementById("view-container");
   if (!vc) return;
   vc.textContent = "";
-  // Close mobile sidebar on navigation.
-  document.getElementById("sidebar")?.classList.remove("open");
+  // Close mobile drawer on navigation.
+  document.getElementById("mobile-drawer")?.classList.add("hidden");
   document.getElementById("menu-toggle-btn")?.setAttribute("aria-expanded", "false");
   renderFn(vc);
 }
@@ -326,7 +359,17 @@ function _setView(renderFn) {
 /* ── Nav highlight ─────────────────────────────────────────────────── */
 function _highlightNav() {
   const hash = window.location.hash.replace(/^#/, "") || "/dashboard";
-  document.querySelectorAll(".nav-link").forEach(a => {
+
+  // Desktop pill nav
+  document.querySelectorAll(".pill-nav-item").forEach(a => {
+    const view = "/" + (a.dataset.view ?? "");
+    const isActive = hash === view || (hash.startsWith(view + "/") && view !== "/");
+    a.classList.toggle("active", isActive);
+    a.setAttribute("aria-current", isActive ? "page" : "false");
+  });
+
+  // Mobile nav
+  document.querySelectorAll(".mobile-nav-link").forEach(a => {
     const view = "/" + (a.dataset.view ?? "");
     const isActive = hash === view || (hash.startsWith(view + "/") && view !== "/");
     a.classList.toggle("active", isActive);
@@ -354,7 +397,6 @@ async function _pollIncidentBadge() {
   if (_isPollingBadge) return;
   _isPollingBadge = true;
   try {
-    // GET /incidents?status=open&limit=100 — just need the count.
     const data = await apiGet("/incidents?status=open&limit=100", { viewKey: "incident-badge" });
     const count = Array.isArray(data?.items) ? data.items.length : 0;
     _updateIncidentBadge(count);
@@ -367,7 +409,8 @@ async function _pollIncidentBadge() {
 function _updateIncidentBadge(count) {
   [
     document.getElementById("incident-badge"),
-    document.getElementById("topbar-incident-badge"),
+    document.getElementById("nav-incident-badge"),
+    document.getElementById("mob-incident-badge"),
   ].forEach(el => {
     if (!el) return;
     if (count > 0) {
@@ -387,20 +430,11 @@ async function _logout() {
   } catch (_) { /* ignore */ }
   _currentUser = null;
   _stopIncidentPoll();
-  // Reset nav.
-  document.querySelectorAll(".nav-link").forEach(a => a.classList.remove("active"));
+  document.querySelectorAll(".pill-nav-item").forEach(a => a.classList.remove("active"));
   renderLogin();
 }
 
 /* ── Internal helpers ────────────────────────────────────────────────── */
-function _makeBackdrop(sidebar) {
-  const bd = document.createElement("div");
-  bd.className = "sidebar-backdrop";
-  bd.id = "sidebar-backdrop";
-  if (sidebar?.parentNode) sidebar.parentNode.insertBefore(bd, sidebar.nextSibling);
-  return bd;
-}
-
 function _formGroup(id, label, type, attrs = {}) {
   const group = document.createElement("div");
   group.className = "form-group";

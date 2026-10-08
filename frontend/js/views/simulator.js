@@ -1,10 +1,5 @@
 /**
- * views/simulator.js — Operations Simulator control room (Admin only).
- *
- * Implements:
- *  - Matrix of services with their simulator states (mode, traffic paused, reporting paused).
- *  - Rapid mode switches and chaos injection toggles.
- *  - 10s polling with cleanup on unmount.
+ * views/simulator.js — Telemetry simulator control room (Soft Bento DNA, Admin only).
  */
 
 import { apiGet, apiPost } from "../api.js";
@@ -39,16 +34,15 @@ export function renderSimulator(container) {
 
   // Header & Title
   const header = document.createElement("div");
-  header.className = "section-header";
+  header.className = "page-header";
 
   const title = document.createElement("h1");
   title.className = "page-title";
-  title.style.marginBottom = "0";
   title.textContent = "Telemetry Simulator Controls";
   header.appendChild(title);
 
   const introCard = document.createElement("div");
-  introCard.className = "card p-4 mb-6";
+  introCard.className = "card mb-6";
   const introP = document.createElement("p");
   introP.className = "text-sm text-muted";
   introP.textContent =
@@ -65,7 +59,7 @@ export function renderSimulator(container) {
   function renderLoading() {
     contentArea.textContent = "";
     const card = document.createElement("div");
-    card.className = "card p-4";
+    card.className = "card p-6";
     for (let i = 0; i < 5; i++) {
       card.appendChild(makeSkeleton("skeleton-text mb-3"));
     }
@@ -77,7 +71,6 @@ export function renderSimulator(container) {
       const servicesRes = await apiGet("/services?page_size=100", { viewKey: "sim-list" });
       const items = Array.isArray(servicesRes?.items) ? servicesRes.items : [];
 
-      // Fetch detail for each service in parallel
       const detailedServices = await Promise.all(
         items.map(async (svc) => {
           try {
@@ -189,9 +182,9 @@ export function renderSimulator(container) {
       // Mode Select
       const select = document.createElement("select");
       select.className = "form-select";
-      select.style.padding = "2px 6px";
+      select.style.padding = "2px 8px";
       select.style.fontSize = "var(--text-xs)";
-      select.style.minHeight = "unset";
+      select.style.minHeight = "32px";
       select.style.width = "auto";
       select.setAttribute("aria-label", `Select simulator mode for ${svc.name}`);
       ["normal", "slow", "failing", "recovering"].forEach((m) => {
@@ -204,8 +197,8 @@ export function renderSimulator(container) {
 
       const applyBtn = document.createElement("button");
       applyBtn.className = "btn btn-secondary";
-      applyBtn.style.padding = "2px 8px";
-      applyBtn.style.minHeight = "unset";
+      applyBtn.style.padding = "2px 10px";
+      applyBtn.style.minHeight = "32px";
       applyBtn.style.fontSize = "var(--text-xs)";
       applyBtn.textContent = "Set";
       applyBtn.setAttribute("aria-label", `Apply simulator mode for ${svc.name}`);
@@ -225,8 +218,8 @@ export function renderSimulator(container) {
       // Traffic toggle
       const tToggle = document.createElement("button");
       tToggle.className = `btn ${sim?.paused ? "btn-danger" : "btn-secondary"}`;
-      tToggle.style.padding = "2px 8px";
-      tToggle.style.minHeight = "unset";
+      tToggle.style.padding = "2px 10px";
+      tToggle.style.minHeight = "32px";
       tToggle.style.fontSize = "var(--text-xs)";
       tToggle.textContent = sim?.paused ? "Resume Traffic" : "Pause Traffic";
       tToggle.setAttribute("aria-label", `${sim?.paused ? "Resume" : "Pause"} traffic for ${svc.name}`);
@@ -247,8 +240,8 @@ export function renderSimulator(container) {
       // Reporting toggle
       const rToggle = document.createElement("button");
       rToggle.className = `btn ${sim?.reporting_paused ? "btn-danger" : "btn-secondary"}`;
-      rToggle.style.padding = "2px 8px";
-      rToggle.style.minHeight = "unset";
+      rToggle.style.padding = "2px 10px";
+      rToggle.style.minHeight = "32px";
       rToggle.style.fontSize = "var(--text-xs)";
       rToggle.textContent = sim?.reporting_paused ? "Resume Rep." : "Pause Rep.";
       rToggle.setAttribute("aria-label", `${sim?.reporting_paused ? "Resume" : "Pause"} reporting for ${svc.name}`);
@@ -281,8 +274,11 @@ export function renderSimulator(container) {
     contentArea.appendChild(tableWrapper);
   }
 
+  // Initial load
   renderLoading();
+  fetchSimulatorData();
 
+  // Polling
   _poller = createPoller({
     intervalMs: 10000,
     onTick: async () => {

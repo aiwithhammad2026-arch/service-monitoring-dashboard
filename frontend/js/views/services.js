@@ -1,5 +1,5 @@
 /**
- * views/services.js — Services list view with search, filtering, and pagination.
+ * views/services.js — Services directory view with soft bento styling.
  */
 
 import { apiGet } from "../api.js";
@@ -15,6 +15,11 @@ import {
   fmtMs,
   fmtDatetime,
 } from "../ui.js";
+import {
+  iconSearch,
+  iconLayers,
+  iconCircle,
+} from "../icons.js";
 
 let _poller = null;
 
@@ -35,24 +40,27 @@ export function renderServices(container) {
 
   // Header & Title
   const header = document.createElement("div");
-  header.className = "section-header";
+  header.className = "page-header";
 
   const title = document.createElement("h1");
   title.className = "page-title";
-  title.style.marginBottom = "0";
   title.textContent = "Services Directory";
   header.appendChild(title);
 
-  // Filter & Search Bar
-  const filterBar = document.createElement("div");
-  filterBar.className = "filter-bar";
+  // Filter Chips Group
+  const filterChipsGroup = document.createElement("div");
+  filterChipsGroup.className = "filter-chips-group";
 
-  // Search input
+  // Chip 1: Search Input Chip
+  const searchChip = document.createElement("div");
+  searchChip.className = "filter-chip";
+  searchChip.appendChild(iconSearch(14));
+
   const searchInput = document.createElement("input");
   searchInput.type = "search";
-  searchInput.className = "form-input";
-  searchInput.placeholder = "Search services by name or ID...";
-  searchInput.style.maxWidth = "280px";
+  searchInput.className = "filter-chip-select";
+  searchInput.placeholder = "Search services...";
+  searchInput.style.minWidth = "180px";
   searchInput.setAttribute("aria-label", "Search services");
 
   let searchDebounce = null;
@@ -64,10 +72,16 @@ export function renderServices(container) {
       fetchServices();
     }, 300);
   });
+  searchChip.appendChild(searchInput);
+  filterChipsGroup.appendChild(searchChip);
 
-  // Status Filter
+  // Chip 2: Status Filter Chip
+  const statusChip = document.createElement("div");
+  statusChip.className = "filter-chip";
+  statusChip.appendChild(iconCircle(14));
+
   const statusSelect = document.createElement("select");
-  statusSelect.className = "form-select";
+  statusSelect.className = "filter-chip-select";
   statusSelect.setAttribute("aria-label", "Filter by status");
   [
     { val: "all", label: "All Statuses" },
@@ -85,10 +99,16 @@ export function renderServices(container) {
     currentPage = 1;
     fetchServices();
   });
+  statusChip.appendChild(statusSelect);
+  filterChipsGroup.appendChild(statusChip);
 
-  // Product Filter
+  // Chip 3: Product Filter Chip
+  const prodChip = document.createElement("div");
+  prodChip.className = "filter-chip";
+  prodChip.appendChild(iconLayers(14));
+
   const productSelect = document.createElement("select");
-  productSelect.className = "form-select";
+  productSelect.className = "filter-chip-select";
   productSelect.setAttribute("aria-label", "Filter by product");
   [
     { val: "all", label: "All Products" },
@@ -106,10 +126,10 @@ export function renderServices(container) {
     currentPage = 1;
     fetchServices();
   });
+  prodChip.appendChild(productSelect);
+  filterChipsGroup.appendChild(prodChip);
 
-  filterBar.appendChild(searchInput);
-  filterBar.appendChild(statusSelect);
-  filterBar.appendChild(productSelect);
+  header.appendChild(filterChipsGroup);
 
   // Content Area
   const contentArea = document.createElement("div");
@@ -117,18 +137,16 @@ export function renderServices(container) {
 
   // Pagination container
   const paginationContainer = document.createElement("div");
-  paginationContainer.className = "mt-4";
   paginationContainer.id = "services-pagination-container";
 
   container.appendChild(header);
-  container.appendChild(filterBar);
   container.appendChild(contentArea);
   container.appendChild(paginationContainer);
 
   function renderLoading() {
     contentArea.textContent = "";
     const card = document.createElement("div");
-    card.className = "card p-4";
+    card.className = "card p-6";
     for (let i = 0; i < 5; i++) {
       card.appendChild(makeSkeleton("skeleton-text mb-3"));
     }
@@ -220,7 +238,7 @@ export function renderServices(container) {
       nameEl.className = "font-bold";
       nameEl.textContent = svc.name;
       const idEl = document.createElement("div");
-      idEl.className = "text-xs text-muted";
+      idEl.className = "text-xs text-muted font-mono";
       idEl.textContent = svc.id;
       nameTd.appendChild(nameEl);
       nameTd.appendChild(idEl);
@@ -281,6 +299,7 @@ export function renderServices(container) {
 
   // Initial load
   renderLoading();
+  fetchServices();
 
   // Polling
   _poller = createPoller({

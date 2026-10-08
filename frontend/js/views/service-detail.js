@@ -1,13 +1,5 @@
 /**
- * views/service-detail.js — Detailed view of an individual service.
- *
- * Implements:
- *  - Service metadata, status badge, threshold reason, and status explanation.
- *  - Service-specific KPI cards.
- *  - Continuous time-series charts (Requests & Errors, Latency p50 & p95).
- *  - Recent incident log.
- *  - Admin control panel: threshold updates, simulator mode switch, traffic/reporting pause.
- *  - 10s polling with cleanup on unmount.
+ * views/service-detail.js — Service details view (Soft Bento DNA).
  */
 
 import { apiGet, apiPut, apiPost } from "../api.js";
@@ -23,6 +15,7 @@ import {
   fmtDatetime,
   setButtonLoading,
 } from "../ui.js";
+import { createHatchPattern } from "../charts-theme.js";
 
 let _poller = null;
 let _reqChart = null;
@@ -35,12 +28,11 @@ export function renderServiceDetail(serviceId, container) {
   }
   _destroyCharts();
 
-  // Handle optional container param from router or default to view-container
   const target = container ?? document.getElementById("view-container");
   if (!target) return;
   target.textContent = "";
 
-  // Breadcrumb / Back
+  // Back Link
   const backNav = document.createElement("div");
   backNav.className = "mb-4";
   const backLink = document.createElement("a");
@@ -95,7 +87,7 @@ export function renderServiceDetail(serviceId, container) {
 
     // 1. Service Header Card
     const headerCard = document.createElement("div");
-    headerCard.className = "card p-6 mb-6";
+    headerCard.className = "card mb-6";
 
     const topRow = document.createElement("div");
     topRow.className = "flex justify-between items-center flex-wrap gap-3";
@@ -103,6 +95,7 @@ export function renderServiceDetail(serviceId, container) {
     const titleBlock = document.createElement("div");
     const h1 = document.createElement("h1");
     h1.className = "page-title";
+    h1.style.fontSize = "2.25rem";
     h1.style.marginBottom = "4px";
     h1.textContent = svc.name;
 
@@ -111,6 +104,7 @@ export function renderServiceDetail(serviceId, container) {
     const prodSpan = document.createElement("span");
     prodSpan.textContent = `Product: ${svc.product.replace("_", " ")}`;
     const idSpan = document.createElement("span");
+    idSpan.className = "font-mono";
     idSpan.textContent = `ID: ${svc.id}`;
     meta.appendChild(prodSpan);
     meta.appendChild(idSpan);
@@ -133,8 +127,9 @@ export function renderServiceDetail(serviceId, container) {
     // Health explanation banner
     const explanation = document.createElement("div");
     explanation.className = "mt-4 p-3 rounded text-sm";
-    explanation.style.background = "var(--surface-2)";
+    explanation.style.background = "var(--sheet-bg)";
     explanation.style.border = "1px solid var(--border)";
+    explanation.style.borderRadius = "var(--radius-chip)";
     explanation.setAttribute("role", "status");
 
     const expText = document.createElement("span");
@@ -148,12 +143,12 @@ export function renderServiceDetail(serviceId, container) {
 
     contentArea.appendChild(headerCard);
 
-    // 2. KPI Cards
+    // 2. KPI Tiles
     const kpiGrid = document.createElement("div");
-    kpiGrid.className = "kpi-grid mb-6";
+    kpiGrid.className = "bento-grid mb-6";
 
     const kpis = [
-      { label: "Req / min", val: fmtNum(svc.req_min), sub: "3-minute average" },
+      { label: "Req / min", val: fmtNum(svc.req_min), sub: "3-minute window average" },
       { label: "Error %", val: svc.error_pct === null ? "No data" : fmtPct(svc.error_pct), sub: `Threshold: ${thresholds?.max_error_pct}%` },
       { label: "p95 Latency", val: svc.p95 === null ? "No data" : fmtMs(svc.p95), sub: `Threshold: ${thresholds?.max_p95_ms}ms` },
       { label: "Last Bucket", val: fmtDatetime(svc.last_update), sub: `Stale after: ${thresholds?.stale_after_s}s` },
@@ -161,15 +156,16 @@ export function renderServiceDetail(serviceId, container) {
 
     kpis.forEach((kpi) => {
       const card = document.createElement("div");
-      card.className = "kpi-card";
+      card.className = "kpi-tile bento-col-3";
       const lbl = document.createElement("div");
-      lbl.className = "kpi-label";
+      lbl.className = "kpi-tile-label";
       lbl.textContent = kpi.label;
       const v = document.createElement("div");
-      v.className = "kpi-value";
+      v.className = "kpi-number";
+      v.style.fontSize = "2.25rem";
       v.textContent = kpi.val;
       const s = document.createElement("div");
-      s.className = "kpi-sub";
+      s.className = "kpi-tile-footer";
       s.textContent = kpi.sub;
       card.appendChild(lbl);
       card.appendChild(v);
@@ -180,11 +176,11 @@ export function renderServiceDetail(serviceId, container) {
 
     // 3. Charts Section
     const chartsGrid = document.createElement("div");
-    chartsGrid.className = "charts-grid mb-6";
+    chartsGrid.className = "bento-grid mb-6";
 
     // Chart 1: Requests & Errors
     const reqCard = document.createElement("div");
-    reqCard.className = "chart-card";
+    reqCard.className = "chart-card bento-col-6";
     const reqTitle = document.createElement("h2");
     reqTitle.className = "card-title";
     reqTitle.textContent = "Requests & Errors (Last 1 Hour)";
@@ -200,7 +196,7 @@ export function renderServiceDetail(serviceId, container) {
 
     // Chart 2: Latency
     const latCard = document.createElement("div");
-    latCard.className = "chart-card";
+    latCard.className = "chart-card bento-col-6";
     const latTitle = document.createElement("h2");
     latTitle.className = "card-title";
     latTitle.textContent = "Latency p50 & p95 (Last 1 Hour)";
@@ -222,9 +218,9 @@ export function renderServiceDetail(serviceId, container) {
 
     // 4. Recent Incidents Card
     const incCard = document.createElement("div");
-    incCard.className = "card p-6 mb-6";
+    incCard.className = "card mb-6";
     const incHeader = document.createElement("div");
-    incHeader.className = "section-header";
+    incHeader.className = "card-header";
     const incTitle = document.createElement("h2");
     incTitle.className = "card-title";
     incTitle.textContent = "Recent Incidents";
@@ -284,7 +280,7 @@ export function renderServiceDetail(serviceId, container) {
     }
     contentArea.appendChild(incCard);
 
-    // 5. Admin Control Panel (Visible strictly to Admin role)
+    // 5. Admin Control Panel
     if (currentUser?.role === "admin") {
       renderAdminPanel(contentArea, thresholds, simState);
     }
@@ -302,31 +298,37 @@ export function renderServiceDetail(serviceId, container) {
     });
 
     const isDark = document.documentElement.getAttribute("data-theme") !== "light";
-    const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
-    const textColor = isDark ? "#8fa3bf" : "#5a6e84";
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)";
+    const textColor = isDark ? "#9CA3AF" : "#575E6C";
+    const accentBlue = isDark ? "#3B82F6" : "#2F54EB";
+    const accentPink = isDark ? "#F472B6" : "#E5539B";
 
     const reqCtx = reqCanvas.getContext("2d");
+    const hatchPattern = createHatchPattern(reqCtx, accentBlue, isDark ? "rgba(59, 130, 246, 0.12)" : "rgba(47, 84, 235, 0.08)");
+
     _reqChart = new window.Chart(reqCtx, {
-      type: "line",
+      type: "bar",
       data: {
         labels,
         datasets: [
           {
+            type: "bar",
             label: "Requests",
             data: points.map((p) => p.requests),
-            borderColor: isDark ? "#3b82f6" : "#2563eb",
-            backgroundColor: isDark ? "rgba(59, 130, 246, 0.1)" : "rgba(37, 99, 235, 0.08)",
-            tension: 0.2,
-            fill: true,
-            pointRadius: labels.length > 60 ? 0 : 2,
+            backgroundColor: hatchPattern,
+            hoverBackgroundColor: accentBlue,
+            borderColor: accentBlue,
+            borderWidth: 1,
+            borderRadius: 4,
           },
           {
+            type: "line",
             label: "Errors",
             data: points.map((p) => p.errors),
-            borderColor: isDark ? "#fb7185" : "#9f1239",
-            backgroundColor: isDark ? "rgba(251, 113, 133, 0.1)" : "rgba(159, 18, 57, 0.08)",
-            tension: 0.2,
-            fill: true,
+            borderColor: "#E5484D",
+            backgroundColor: "rgba(229, 72, 77, 0.15)",
+            borderWidth: 2,
+            tension: 0.1,
             pointRadius: labels.length > 60 ? 0 : 2,
           },
         ],
@@ -334,10 +336,23 @@ export function renderServiceDetail(serviceId, container) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: textColor } } },
+        plugins: {
+          legend: { labels: { color: textColor, font: { size: 12, family: "-apple-system, sans-serif" } } },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            backgroundColor: isDark ? "#17181C" : "#FFFFFF",
+            titleColor: isDark ? "#F3F4F6" : "#0B0B0F",
+            bodyColor: isDark ? "#D1D5DB" : "#374151",
+            borderColor: isDark ? "#23242A" : "#ECECEE",
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 10,
+          },
+        },
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: 8 } },
-          y: { grid: { color: gridColor }, ticks: { color: textColor }, beginAtZero: true },
+          x: { grid: { color: gridColor, drawOnChartArea: true }, ticks: { color: textColor, maxTicksLimit: 8 } },
+          y: { grid: { display: false }, ticks: { color: textColor }, beginAtZero: true },
         },
       },
     });
@@ -351,17 +366,19 @@ export function renderServiceDetail(serviceId, container) {
           {
             label: "p50 (ms)",
             data: points.map((p) => p.p50),
-            borderColor: isDark ? "#22c55e" : "#166534",
+            borderColor: isDark ? "#4ADE80" : "#22B573",
             backgroundColor: "transparent",
-            tension: 0.2,
+            stepped: "before",
+            borderWidth: 2,
             pointRadius: labels.length > 60 ? 0 : 2,
           },
           {
             label: "p95 (ms)",
             data: points.map((p) => p.p95),
-            borderColor: isDark ? "#f59e0b" : "#92400e",
+            borderColor: accentPink,
             backgroundColor: "transparent",
-            tension: 0.2,
+            stepped: "before",
+            borderWidth: 2,
             pointRadius: labels.length > 60 ? 0 : 2,
           },
         ],
@@ -369,10 +386,23 @@ export function renderServiceDetail(serviceId, container) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: textColor } } },
+        plugins: {
+          legend: { labels: { color: textColor, font: { size: 12, family: "-apple-system, sans-serif" } } },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            backgroundColor: isDark ? "#17181C" : "#FFFFFF",
+            titleColor: isDark ? "#F3F4F6" : "#0B0B0F",
+            bodyColor: isDark ? "#D1D5DB" : "#374151",
+            borderColor: isDark ? "#23242A" : "#ECECEE",
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 10,
+          },
+        },
         scales: {
-          x: { grid: { color: gridColor }, ticks: { color: textColor, maxTicksLimit: 8 } },
-          y: { grid: { color: gridColor }, ticks: { color: textColor }, beginAtZero: true },
+          x: { grid: { color: gridColor, drawOnChartArea: true }, ticks: { color: textColor, maxTicksLimit: 6 } },
+          y: { grid: { display: false }, ticks: { color: textColor }, beginAtZero: true },
         },
       },
     });
@@ -380,11 +410,11 @@ export function renderServiceDetail(serviceId, container) {
 
   function renderAdminPanel(parent, thresholds, simState) {
     const adminCard = document.createElement("div");
-    adminCard.className = "card p-6 mb-6";
-    adminCard.style.borderColor = "var(--accent)";
+    adminCard.className = "card mb-6";
+    adminCard.style.borderColor = "var(--border-strong)";
 
     const aHeader = document.createElement("div");
-    aHeader.className = "section-header";
+    aHeader.className = "card-header";
     const aTitle = document.createElement("h2");
     aTitle.className = "card-title";
     aTitle.textContent = "Admin Service Controls";
@@ -395,16 +425,16 @@ export function renderServiceDetail(serviceId, container) {
     aHeader.appendChild(aBadge);
     adminCard.appendChild(aHeader);
 
-    // 1. Thresholds Form
+    // Thresholds Form
     const threshForm = document.createElement("form");
     threshForm.className = "mb-6";
 
     const fGrid = document.createElement("div");
-    fGrid.className = "kpi-grid";
+    fGrid.className = "bento-grid mb-4";
 
     // Max Error %
     const errGroup = document.createElement("div");
-    errGroup.className = "form-group";
+    errGroup.className = "form-group bento-col-4";
     const errLabel = document.createElement("label");
     errLabel.className = "form-label";
     errLabel.textContent = "Max Error % (0 - 100)";
@@ -421,7 +451,7 @@ export function renderServiceDetail(serviceId, container) {
 
     // Max p95 ms
     const p95Group = document.createElement("div");
-    p95Group.className = "form-group";
+    p95Group.className = "form-group bento-col-4";
     const p95Label = document.createElement("label");
     p95Label.className = "form-label";
     p95Label.textContent = "Max p95 Latency (1 - 60000 ms)";
@@ -438,7 +468,7 @@ export function renderServiceDetail(serviceId, container) {
 
     // Stale after s
     const staleGroup = document.createElement("div");
-    staleGroup.className = "form-group";
+    staleGroup.className = "form-group bento-col-4";
     const staleLabel = document.createElement("label");
     staleLabel.className = "form-label";
     staleLabel.textContent = "Stale After (30 - 3600 s)";
@@ -483,7 +513,7 @@ export function renderServiceDetail(serviceId, container) {
 
     adminCard.appendChild(threshForm);
 
-    // 2. Simulator Controls
+    // Simulator Controls
     const simSection = document.createElement("div");
     simSection.style.borderTop = "1px solid var(--border)";
     simSection.className = "pt-4";
@@ -494,7 +524,7 @@ export function renderServiceDetail(serviceId, container) {
     simSection.appendChild(simTitle);
 
     const simControls = document.createElement("div");
-    simControls.className = "flex gap-4 flex-wrap items-center";
+    simControls.className = "flex gap-3 flex-wrap items-center";
 
     // Mode Selector
     const modeSelect = document.createElement("select");
@@ -586,6 +616,7 @@ export function renderServiceDetail(serviceId, container) {
 
   // Initial load
   renderLoading();
+  fetchServiceData();
 
   // Polling
   _poller = createPoller({

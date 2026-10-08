@@ -1,11 +1,5 @@
 /**
- * views/audit.js — Audit logs inspection and CSV export (Admin only).
- *
- * Implements:
- *  - CSV export downloads for metrics and incidents.
- *  - Paginated audit log table.
- *  - Formatted audit details view.
- *  - 10s polling with cleanup on unmount.
+ * views/audit.js — Audit logs inspection & CSV exports (Soft Bento DNA, Admin only).
  */
 
 import { apiGet } from "../api.js";
@@ -44,20 +38,19 @@ export function renderAudit(container) {
 
   // Header & Title
   const header = document.createElement("div");
-  header.className = "section-header";
+  header.className = "page-header";
 
   const title = document.createElement("h1");
   title.className = "page-title";
-  title.style.marginBottom = "0";
   title.textContent = "Audit Log & System Exports";
   header.appendChild(title);
 
   // CSV Export Card
   const exportCard = document.createElement("div");
-  exportCard.className = "card p-5 mb-6";
+  exportCard.className = "card mb-6";
 
   const exportHeader = document.createElement("div");
-  exportHeader.className = "section-header";
+  exportHeader.className = "card-header";
   const exportTitle = document.createElement("h2");
   exportTitle.className = "card-title";
   exportTitle.textContent = "Data Exports (CSV)";
@@ -95,7 +88,6 @@ export function renderAudit(container) {
 
   // Pagination container
   const paginationContainer = document.createElement("div");
-  paginationContainer.className = "mt-4";
   paginationContainer.id = "audit-pagination-container";
 
   container.appendChild(header);
@@ -106,7 +98,7 @@ export function renderAudit(container) {
   function renderLoading() {
     contentArea.textContent = "";
     const card = document.createElement("div");
-    card.className = "card p-4";
+    card.className = "card p-6";
     for (let i = 0; i < 5; i++) {
       card.appendChild(makeSkeleton("skeleton-text mb-3"));
     }
@@ -176,7 +168,8 @@ export function renderAudit(container) {
 
       // Timestamp
       const timeTd = document.createElement("td");
-      timeTd.className = "text-xs text-muted whitespace-nowrap";
+      timeTd.className = "text-xs text-muted";
+      timeTd.style.whiteSpace = "nowrap";
       timeTd.textContent = fmtDatetime(entry.created_at);
       row.appendChild(timeTd);
 
@@ -237,6 +230,7 @@ export function renderAudit(container) {
 
   // Initial load
   renderLoading();
+  fetchAuditLogs();
 
   // Polling
   _poller = createPoller({
