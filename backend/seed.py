@@ -252,6 +252,10 @@ def seed(db_path: Path | str | None = None) -> dict[str, int]:
         return counts
 
 
+# Alias for backward compatibility
+seed_database = seed
+
+
 if __name__ == "__main__":
     print("Seeding database...")
     result_counts = seed()
@@ -259,3 +263,4 @@ if __name__ == "__main__":
     print("Row counts by table:")
     for tbl, count in sorted(result_counts.items()):
         print(f"  {tbl:<18}: {count}")
+
