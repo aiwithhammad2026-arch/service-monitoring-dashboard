@@ -90,7 +90,7 @@ let _incidentPollTimer = null;
   // Auth bootstrap.
   try {
     const me = await apiGet("/auth/me", { viewKey: "boot" });
-    _currentUser = me;
+    _currentUser = me?.user ?? me;
     _buildShell();
     startRouter();
     _startIncidentPoll();
@@ -233,7 +233,7 @@ export function renderLogin(presetError = "") {
     try {
       await apiPost("/auth/login", { username, password });
       const me = await apiGet("/auth/me", { viewKey: "login-me" });
-      _currentUser = me;
+      _currentUser = me?.user ?? me;
       loginWrap.classList.add("hidden");
       const appEl = document.getElementById("app");
       if (appEl) appEl.classList.remove("hidden");
@@ -241,10 +241,14 @@ export function renderLogin(presetError = "") {
       startRouter();
       _startIncidentPoll();
     } catch (err) {
-      const msg = err instanceof ApiError
-        ? (err.status === 401 ? "Invalid username or password." : err.message)
-        : "Network error — is the server running?";
-      errBox.textContent = msg;
+      if (err instanceof ApiError) {
+        errBox.textContent = err.status === 401 ? "Invalid username or password." : err.message;
+      } else if (err instanceof TypeError && (err.message.includes("fetch") || err.message.includes("NetworkError") || err.message.includes("Failed to fetch") || err.message.includes("Load failed"))) {
+        errBox.textContent = "Network error — is the server running?";
+      } else {
+        console.error(err);
+        errBox.textContent = "Something went wrong. Check the browser console.";
+      }
       errBox.className = "login-error visible";
     } finally {
       setButtonLoading(submitBtn, false);

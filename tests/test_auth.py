@@ -287,3 +287,27 @@ def test_logs_clean_no_passwords_or_cookies_logged(
     assert DEMO_ADMIN_PASS not in log_text
     if cookie_value:
         assert cookie_value not in log_text
+
+
+def test_auth_me_contract_pins_top_level_user_key(auth_client: TestClient) -> None:
+    """Contract test: GET /auth/me returns JSON whose top-level key is 'user'
+    with username and role inside.
+    """
+    headers = {"X-Requested-With": "XMLHttpRequest"}
+    login_resp = auth_client.post(
+        "/auth/login",
+        json={"username": "admin", "password": DEMO_ADMIN_PASS},
+        headers=headers,
+    )
+    assert login_resp.status_code == 200
+
+    me_resp = auth_client.get("/auth/me")
+    assert me_resp.status_code == 200
+    data = me_resp.json()
+    assert "user" in data
+    assert isinstance(data["user"], dict)
+    assert "username" in data["user"]
+    assert "role" in data["user"]
+    assert data["user"]["username"] == "admin"
+    assert data["user"]["role"] == "admin"
+
