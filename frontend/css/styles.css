@@ -2224,3 +2224,45 @@ tbody tr:hover {
   color: var(--text-primary);
   font-weight: 600;
 }
+
+/* ── Audit Details Formatting ─────────────────────────────────────────── */
+.audit-details-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.audit-detail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--fill-quaternary);
+  border: 0.5px solid var(--border-subtle);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.audit-chip-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.audit-chip-arrow {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin: 0 1px;
+}
+
+.audit-chip-mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  background-color: var(--fill-tertiary);
+  padding: 1px 4px;
+  border-radius: 3px;
+}

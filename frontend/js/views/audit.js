@@ -15,6 +15,151 @@ import {
 
 let _poller = null;
 
+function formatAuditDetails(detailsVal) {
+  const container = document.createElement("div");
+  container.className = "audit-details-wrap";
+
+  if (!detailsVal || (typeof detailsVal !== "object" && typeof detailsVal !== "string")) {
+    const dash = document.createElement("span");
+    dash.className = "text-muted";
+    dash.textContent = "—";
+    container.appendChild(dash);
+    return container;
+  }
+
+  let obj = detailsVal;
+  if (typeof detailsVal === "string") {
+    try {
+      obj = JSON.parse(detailsVal);
+    } catch (_) {
+      const span = document.createElement("span");
+      span.textContent = detailsVal;
+      container.appendChild(span);
+      return container;
+    }
+  }
+
+  if (typeof obj !== "object" || obj === null) {
+    const span = document.createElement("span");
+    span.textContent = String(obj);
+    container.appendChild(span);
+    return container;
+  }
+
+  const oldVal = obj.old;
+  const newVal = obj.new;
+  const ip = obj.ip;
+  const renderedKeys = new Set(["old", "new", "ip"]);
+
+  // 1. If old and new exist
+  if (oldVal !== undefined || newVal !== undefined) {
+    if (oldVal && typeof oldVal === "object" && newVal && typeof newVal === "object") {
+      const allKeys = Array.from(new Set([...Object.keys(oldVal), ...Object.keys(newVal)]));
+      allKeys.forEach((k) => {
+        const oV = oldVal[k];
+        const nV = newVal[k];
+        const chip = document.createElement("div");
+        chip.className = "audit-detail-chip";
+
+        const label = document.createElement("span");
+        label.className = "audit-chip-label";
+        label.textContent = k.replace(/_/g, " ") + ":";
+        chip.appendChild(label);
+
+        if (oV !== undefined && nV !== undefined && oV !== nV) {
+          const oldBadge = document.createElement("span");
+          oldBadge.className = "badge badge-neutral text-xs";
+          oldBadge.textContent = String(oV);
+
+          const arrow = document.createElement("span");
+          arrow.className = "audit-chip-arrow";
+          arrow.textContent = "→";
+
+          const newBadge = document.createElement("span");
+          newBadge.className =
+            nV === "failing"
+              ? "badge badge-danger text-xs"
+              : nV === "slow"
+              ? "badge badge-accent text-xs"
+              : nV === "normal" || nV === "resolved"
+              ? "badge badge-success text-xs"
+              : "badge badge-accent text-xs";
+          newBadge.textContent = String(nV);
+
+          chip.appendChild(oldBadge);
+          chip.appendChild(arrow);
+          chip.appendChild(newBadge);
+        } else {
+          const valBadge = document.createElement("span");
+          valBadge.className = "badge badge-neutral text-xs";
+          valBadge.textContent = String(nV ?? oV ?? "—");
+          chip.appendChild(valBadge);
+        }
+        container.appendChild(chip);
+      });
+    } else if (newVal && typeof newVal === "object") {
+      Object.entries(newVal).forEach(([k, v]) => {
+        const chip = document.createElement("div");
+        chip.className = "audit-detail-chip";
+        const label = document.createElement("span");
+        label.className = "audit-chip-label";
+        label.textContent = k.replace(/_/g, " ") + ":";
+        const valBadge = document.createElement("span");
+        valBadge.className = "badge badge-accent text-xs";
+        valBadge.textContent = String(v);
+        chip.appendChild(label);
+        chip.appendChild(valBadge);
+        container.appendChild(chip);
+      });
+    }
+  }
+
+  // 2. IP chip
+  if (ip) {
+    const chip = document.createElement("div");
+    chip.className = "audit-detail-chip";
+    const label = document.createElement("span");
+    label.className = "audit-chip-label";
+    label.textContent = "IP:";
+    const valTag = document.createElement("span");
+    valTag.className = "audit-chip-mono";
+    valTag.textContent = ip;
+    chip.appendChild(label);
+    chip.appendChild(valTag);
+    container.appendChild(chip);
+  }
+
+  // 3. Any other extra top-level keys
+  Object.entries(obj).forEach(([k, v]) => {
+    if (renderedKeys.has(k)) return;
+    const chip = document.createElement("div");
+    chip.className = "audit-detail-chip";
+    const label = document.createElement("span");
+    label.className = "audit-chip-label";
+    label.textContent = k.replace(/_/g, " ") + ":";
+    const valSpan = document.createElement("span");
+    if (typeof v === "object" && v !== null) {
+      valSpan.className = "audit-chip-mono";
+      valSpan.textContent = JSON.stringify(v);
+    } else {
+      valSpan.className = "badge badge-neutral text-xs";
+      valSpan.textContent = String(v);
+    }
+    chip.appendChild(label);
+    chip.appendChild(valSpan);
+    container.appendChild(chip);
+  });
+
+  if (container.children.length === 0) {
+    const dash = document.createElement("span");
+    dash.className = "text-muted";
+    dash.textContent = "—";
+    container.appendChild(dash);
+  }
+
+  return container;
+}
+
 export function renderAudit(container) {
   if (_poller) {
     _poller.stop();
@@ -200,13 +345,7 @@ export function renderAudit(container) {
 
       // Details
       const detailsTd = document.createElement("td");
-      detailsTd.className = "text-xs font-mono";
-      const detailsVal = entry.details;
-      if (detailsVal && typeof detailsVal === "object") {
-        detailsTd.textContent = JSON.stringify(detailsVal);
-      } else {
-        detailsTd.textContent = detailsVal ? String(detailsVal) : "—";
-      }
+      detailsTd.appendChild(formatAuditDetails(entry.details));
       row.appendChild(detailsTd);
 
       tbody.appendChild(row);
