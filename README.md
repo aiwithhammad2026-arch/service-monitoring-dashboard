@@ -386,8 +386,9 @@ python -m scripts.check_docs
 ## Authors & Maintainers
 
 - **Hammad** — AI Engineer & Developer • [aiwithhammad2026@gmail.com](mailto:aiwithhammad2026@gmail.com)
-- **Maaz Ali** — Full-Stack Engineer & Deployment Lead • [maazzalii11@gmail.com](mailto:maazzalii11@gmail.com)
+- **Maaz Ali** — Full-Stack Engineer & Deployment Lead • [maazalisshahid@gmail.com](mailto:maazalisshahid@gmail.com)
 - **Live Demo:** [https://service-monitoring-dashboard-sigma.vercel.app/](https://service-monitoring-dashboard-sigma.vercel.app/)
 - **Repository:** [aiwithhammad2026-arch/service-monitoring-dashboard](https://github.com/aiwithhammad2026-arch/service-monitoring-dashboard)
+
 
 
