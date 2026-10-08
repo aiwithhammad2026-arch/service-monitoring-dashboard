@@ -5,9 +5,11 @@ import subprocess
 from pathlib import Path
 
 FILE_EXTS = (
-    ".py", ".js", ".sql", ".css", ".md", ".html", ".png", ".svg", ".jpg", ".jpeg", ".webp", ".json", ".txt"
+    ".py", ".js", ".sql", ".css", ".md", ".html",
+    ".png", ".svg", ".jpg", ".jpeg", ".webp", ".json", ".txt",
 )
 KNOWN_ROOTS = ("backend", "frontend", "docs", "scripts", "tests", "assets", "api")
+
 
 
 def get_tracked_set() -> set[str]:
