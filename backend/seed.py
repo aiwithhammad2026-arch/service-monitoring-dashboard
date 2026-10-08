@@ -248,8 +248,126 @@ def seed(db_path: Path | str | None = None) -> dict[str, int]:
                     ),
                 )
 
+        # 8. Seed Audit Logs for Administrative History
+        t_m58 = (anchor_dt - timedelta(minutes=58)).isoformat()
+        t_m56 = (anchor_dt - timedelta(minutes=56)).isoformat()
+        t_m52 = (anchor_dt - timedelta(minutes=52)).isoformat()
+        t_m48 = (anchor_dt - timedelta(minutes=48)).isoformat()
+        t_m40 = (anchor_dt - timedelta(minutes=40)).isoformat()
+        t_m32 = (anchor_dt - timedelta(minutes=32)).isoformat()
+        t_m28 = (anchor_dt - timedelta(minutes=28)).isoformat()
+        t_m26 = (anchor_dt - timedelta(minutes=26)).isoformat()
+        t_m20 = (anchor_dt - timedelta(minutes=20)).isoformat()
+        t_m5 = (anchor_dt - timedelta(minutes=5)).isoformat()
+
+        audit_records = [
+            (
+                1,
+                "system",
+                "system_init",
+                "system",
+                "cluster-prod",
+                {"new": {"version": "0.1.0", "status": "operational"}, "ip": "127.0.0.1"},
+                t_m58,
+            ),
+            (
+                2,
+                "admin",
+                "login",
+                "auth",
+                "admin",
+                {"new": {"role": "admin", "method": "pwd"}, "ip": "192.168.1.104"},
+                t_m56,
+            ),
+            (
+                3,
+                "admin",
+                "acknowledge_incident",
+                "incidents",
+                "3",
+                {"old": {"status": "open"}, "new": {"status": "acknowledged"}},
+                t_m52,
+            ),
+            (
+                4,
+                "admin",
+                "update_threshold",
+                "thresholds",
+                "payments",
+                {"old": {"max_p95_ms": 1000.0}, "new": {"max_p95_ms": 800.0}},
+                t_m48,
+            ),
+            (
+                5,
+                "admin",
+                "acknowledge_incident",
+                "incidents",
+                "1",
+                {"old": {"status": "open"}, "new": {"status": "acknowledged"}},
+                t_m40,
+            ),
+            (
+                6,
+                "admin",
+                "resolve_incident",
+                "incidents",
+                "3",
+                {"old": {"status": "recovered"}, "new": {"status": "resolved"}},
+                t_m32,
+            ),
+            (
+                7,
+                "admin",
+                "set_mode",
+                "simulator",
+                "catalog",
+                {"old": {"mode": "slow"}, "new": {"mode": "normal"}, "ip": "192.168.1.104"},
+                t_m28,
+            ),
+            (
+                8,
+                "admin",
+                "acknowledge_incident",
+                "incidents",
+                "2",
+                {"old": {"status": "open"}, "new": {"status": "acknowledged"}},
+                t_m26,
+            ),
+            (
+                9,
+                "admin",
+                "resolve_incident",
+                "incidents",
+                "1",
+                {"old": {"status": "recovered"}, "new": {"status": "resolved"}},
+                t_m20,
+            ),
+            (
+                10,
+                "viewer",
+                "login",
+                "auth",
+                "viewer",
+                {"new": {"role": "viewer", "method": "pwd"}, "ip": "10.0.4.22"},
+                t_m5,
+            ),
+        ]
+
+        for audit_id, actor, action, target_type, target_id, details, created_at in audit_records:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO audit_log (
+                    id, actor, action, target_type, target_id, details, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?);
+                """,
+                (audit_id, actor, action, target_type, target_id, json.dumps(details), created_at),
+            )
+
         counts = get_table_counts(conn)
         return counts
+
+
+
 
 
 # Alias for backward compatibility
