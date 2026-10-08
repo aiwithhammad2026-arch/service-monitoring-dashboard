@@ -35,3 +35,6 @@ coverage.xml
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Scratch / Temporary Test Scripts
+scratch/

@@ -46,20 +46,140 @@ function makeRect(x, y, w, h, rx = 0, attrs = {}) {
   return rect;
 }
 
-export function iconLogo(size = 20) {
-  const svg = makeSvg(size, "0 0 24 24", "icon-logo");
+let _logoIdCounter = 0;
+
+export function iconLogo(size = 24) {
+  _logoIdCounter++;
+  const idPrefix = `smd-logo-${_logoIdCounter}`;
+  const gradId = `${idPrefix}-grad`;
+  const bgGradId = `${idPrefix}-bg`;
+  const filterId = `${idPrefix}-glow`;
+
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  svg.setAttribute("viewBox", "0 0 32 32");
   svg.setAttribute("fill", "none");
-  const rect = makeRect(2, 2, 20, 20, 6, {
-    fill: "var(--accent-blue)",
-    stroke: "var(--accent-blue)",
-  });
-  const p = makePath("M13 3L4 14h7l-2 7 9-11h-7l2-7z", {
-    fill: "#FFFFFF",
-    stroke: "#FFFFFF",
-    "stroke-width": "1.5",
-  });
-  svg.appendChild(rect);
-  svg.appendChild(p);
+  svg.setAttribute("class", "brand-logo-svg");
+  svg.setAttribute("aria-hidden", "true");
+
+  const defs = document.createElementNS(SVG_NS, "defs");
+
+  // Linear gradient: Electric Cyan -> Telemetry Teal -> Glowing Emerald Green
+  const grad = document.createElementNS(SVG_NS, "linearGradient");
+  grad.setAttribute("id", gradId);
+  grad.setAttribute("x1", "0%");
+  grad.setAttribute("y1", "50%");
+  grad.setAttribute("x2", "100%");
+  grad.setAttribute("y2", "50%");
+
+  const stop1 = document.createElementNS(SVG_NS, "stop");
+  stop1.setAttribute("offset", "0%");
+  stop1.setAttribute("stop-color", "#00D2FF");
+
+  const stop2 = document.createElementNS(SVG_NS, "stop");
+  stop2.setAttribute("offset", "55%");
+  stop2.setAttribute("stop-color", "#00E5C9");
+
+  const stop3 = document.createElementNS(SVG_NS, "stop");
+  stop3.setAttribute("offset", "100%");
+  stop3.setAttribute("stop-color", "#10E599");
+
+  grad.appendChild(stop1);
+  grad.appendChild(stop2);
+  grad.appendChild(stop3);
+  defs.appendChild(grad);
+
+  // Background deep navy-charcoal squircle gradient
+  const bgGrad = document.createElementNS(SVG_NS, "linearGradient");
+  bgGrad.setAttribute("id", bgGradId);
+  bgGrad.setAttribute("x1", "0%");
+  bgGrad.setAttribute("y1", "0%");
+  bgGrad.setAttribute("x2", "100%");
+  bgGrad.setAttribute("y2", "100%");
+
+  const bgStop1 = document.createElementNS(SVG_NS, "stop");
+  bgStop1.setAttribute("offset", "0%");
+  bgStop1.setAttribute("stop-color", "#131927");
+
+  const bgStop2 = document.createElementNS(SVG_NS, "stop");
+  bgStop2.setAttribute("offset", "100%");
+  bgStop2.setAttribute("stop-color", "#090D15");
+
+  bgGrad.appendChild(bgStop1);
+  bgGrad.appendChild(bgStop2);
+  defs.appendChild(bgGrad);
+
+  // Gaussian Blur Glow Filter
+  const filter = document.createElementNS(SVG_NS, "filter");
+  filter.setAttribute("id", filterId);
+  filter.setAttribute("x", "-30%");
+  filter.setAttribute("y", "-30%");
+  filter.setAttribute("width", "160%");
+  filter.setAttribute("height", "160%");
+
+  const feBlur = document.createElementNS(SVG_NS, "feGaussianBlur");
+  feBlur.setAttribute("stdDeviation", "1.6");
+  feBlur.setAttribute("result", "blur");
+  filter.appendChild(feBlur);
+  defs.appendChild(filter);
+
+  svg.appendChild(defs);
+
+  // 1. Dark App Icon Squircle Container
+  const bgRect = document.createElementNS(SVG_NS, "rect");
+  bgRect.setAttribute("x", "0.75");
+  bgRect.setAttribute("y", "0.75");
+  bgRect.setAttribute("width", "30.5");
+  bgRect.setAttribute("height", "30.5");
+  bgRect.setAttribute("rx", "8.5");
+  bgRect.setAttribute("fill", `url(#${bgGradId})`);
+  bgRect.setAttribute("stroke", "rgba(255, 255, 255, 0.12)");
+  bgRect.setAttribute("stroke-width", "0.75");
+  svg.appendChild(bgRect);
+
+  // Telemetry Waveform Path Definition
+  const pulseD = "M 3.5 16.5 L 8 16.5 L 11.5 10 L 15.5 23.5 L 19.5 7.5 L 23.5 16.5 L 28.5 16.5";
+
+  // 2. Soft Ambient Cyan/Teal Glow Aura Layer
+  const glowLine = document.createElementNS(SVG_NS, "path");
+  glowLine.setAttribute("d", pulseD);
+  glowLine.setAttribute("fill", "none");
+  glowLine.setAttribute("stroke", `url(#${gradId})`);
+  glowLine.setAttribute("stroke-width", "4.2");
+  glowLine.setAttribute("stroke-linecap", "round");
+  glowLine.setAttribute("stroke-linejoin", "round");
+  glowLine.setAttribute("opacity", "0.45");
+  glowLine.setAttribute("filter", `url(#${filterId})`);
+  svg.appendChild(glowLine);
+
+  // 3. Crisp Foreground Pulse Waveform
+  const pulseLine = document.createElementNS(SVG_NS, "path");
+  pulseLine.setAttribute("d", pulseD);
+  pulseLine.setAttribute("fill", "none");
+  pulseLine.setAttribute("stroke", `url(#${gradId})`);
+  pulseLine.setAttribute("stroke-width", "2.35");
+  pulseLine.setAttribute("stroke-linecap", "round");
+  pulseLine.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(pulseLine);
+
+  // 4. Luminous Apex Bead / Node at Highest Peak
+  const apexGlow = document.createElementNS(SVG_NS, "circle");
+  apexGlow.setAttribute("cx", "19.5");
+  apexGlow.setAttribute("cy", "7.5");
+  apexGlow.setAttribute("r", "3.2");
+  apexGlow.setAttribute("fill", "#10E599");
+  apexGlow.setAttribute("opacity", "0.4");
+  apexGlow.setAttribute("filter", `url(#${filterId})`);
+  svg.appendChild(apexGlow);
+
+  const apexDot = document.createElementNS(SVG_NS, "circle");
+  apexDot.setAttribute("cx", "19.5");
+  apexDot.setAttribute("cy", "7.5");
+  apexDot.setAttribute("r", "2.1");
+  apexDot.setAttribute("fill", "#10E599");
+  svg.appendChild(apexDot);
+
   return svg;
 }
 
@@ -200,5 +320,18 @@ export function iconSparkle(size = 16) {
 export function iconChevronDown(size = 12) {
   const svg = makeSvg(size, "0 0 24 24");
   svg.appendChild(makePath("M6 9l6 6 6-6"));
+  return svg;
+}
+
+export function iconEye(size = 16) {
+  const svg = makeSvg(size, "0 0 24 24");
+  svg.appendChild(makePath("M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"));
+  svg.appendChild(makeCircle(12, 12, 3));
+  return svg;
+}
+
+export function iconEyeOff(size = 16) {
+  const svg = makeSvg(size, "0 0 24 24");
+  svg.appendChild(makePath("M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"));
   return svg;
 }

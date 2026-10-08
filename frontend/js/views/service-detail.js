@@ -15,7 +15,7 @@ import {
   fmtDatetime,
   setButtonLoading,
 } from "../ui.js";
-import { createHatchPattern } from "../charts-theme.js";
+import { createGradient, createHatchPattern } from "../charts-theme.js";
 
 let _poller = null;
 let _reqChart = null;
@@ -95,8 +95,6 @@ export function renderServiceDetail(serviceId, container) {
     const titleBlock = document.createElement("div");
     const h1 = document.createElement("h1");
     h1.className = "page-title";
-    h1.style.fontSize = "2.25rem";
-    h1.style.marginBottom = "4px";
     h1.textContent = svc.name;
 
     const meta = document.createElement("div");
@@ -162,7 +160,6 @@ export function renderServiceDetail(serviceId, container) {
       lbl.textContent = kpi.label;
       const v = document.createElement("div");
       v.className = "kpi-number";
-      v.style.fontSize = "2.25rem";
       v.textContent = kpi.val;
       const s = document.createElement("div");
       s.className = "kpi-tile-footer";
@@ -215,6 +212,13 @@ export function renderServiceDetail(serviceId, container) {
     contentArea.appendChild(chartsGrid);
 
     renderCharts(historyRes, reqCanvas, latCanvas);
+
+    const onThemeChange = () => {
+      if (document.body.contains(reqCanvas) && document.body.contains(latCanvas)) {
+        renderCharts(historyRes, reqCanvas, latCanvas);
+      }
+    };
+    window.addEventListener("themechange", onThemeChange);
 
     // 4. Recent Incidents Card
     const incCard = document.createElement("div");
@@ -298,111 +302,172 @@ export function renderServiceDetail(serviceId, container) {
     });
 
     const isDark = document.documentElement.getAttribute("data-theme") !== "light";
-    const gridColor = isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.05)";
-    const textColor = isDark ? "#9CA3AF" : "#575E6C";
-    const accentBlue = isDark ? "#3B82F6" : "#2F54EB";
-    const accentPink = isDark ? "#F472B6" : "#E5539B";
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "#E3E8F0";
+    const textColor = isDark ? "#A7B0BE" : "#667085";
+    const accentBlue = "#1677FF";
+    const accentRed = "#D64545";
+    const accentGreen = "#22A06B";
+    const accentTeal = "#0FAF9A";
 
+    // 1. Requests & Errors Chart
     const reqCtx = reqCanvas.getContext("2d");
-    const hatchPattern = createHatchPattern(reqCtx, accentBlue, isDark ? "rgba(59, 130, 246, 0.12)" : "rgba(47, 84, 235, 0.08)");
+    const reqGrad = createGradient(reqCtx, isDark ? "rgba(22, 119, 255, 0.22)" : "rgba(22, 119, 255, 0.10)", "rgba(22, 119, 255, 0.0)", 220);
+    const errGrad = createGradient(reqCtx, isDark ? "rgba(214, 69, 69, 0.22)" : "rgba(214, 69, 69, 0.10)", "rgba(214, 69, 69, 0.0)", 220);
 
     _reqChart = new window.Chart(reqCtx, {
-      type: "bar",
+      type: "line",
       data: {
         labels,
         datasets: [
           {
-            type: "bar",
             label: "Requests",
             data: points.map((p) => p.requests),
-            backgroundColor: hatchPattern,
-            hoverBackgroundColor: accentBlue,
             borderColor: accentBlue,
-            borderWidth: 1,
-            borderRadius: 4,
+            backgroundColor: reqGrad,
+            borderWidth: 2,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: accentBlue,
+            pointHoverBorderColor: "#FFFFFF",
+            pointHoverBorderWidth: 2,
+            order: 2,
           },
           {
-            type: "line",
-            label: "Errors",
+            label: "Errors (5xx)",
             data: points.map((p) => p.errors),
-            borderColor: "#E5484D",
-            backgroundColor: "rgba(229, 72, 77, 0.15)",
-            borderWidth: 2,
-            tension: 0.1,
-            pointRadius: labels.length > 60 ? 0 : 2,
+            borderColor: accentRed,
+            backgroundColor: errGrad,
+            borderWidth: 1.75,
+            tension: 0.25,
+            fill: true,
+            pointRadius: points.some((p) => (p.errors || 0) > 0) ? 2 : 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: accentRed,
+            pointHoverBorderColor: "#FFFFFF",
+            pointHoverBorderWidth: 2,
+            order: 1,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
         plugins: {
-          legend: { labels: { color: textColor, font: { size: 12, family: "-apple-system, sans-serif" } } },
+          legend: {
+            position: "top",
+            align: "end",
+            labels: {
+              boxWidth: 7,
+              boxHeight: 7,
+              usePointStyle: true,
+              pointStyle: "circle",
+              color: textColor,
+              font: { size: 12, family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif", weight: "500" },
+              padding: 12,
+            },
+          },
           tooltip: {
-            mode: "index",
-            intersect: false,
-            backgroundColor: isDark ? "#17181C" : "#FFFFFF",
-            titleColor: isDark ? "#F3F4F6" : "#0B0B0F",
-            bodyColor: isDark ? "#D1D5DB" : "#374151",
-            borderColor: isDark ? "#23242A" : "#ECECEE",
-            borderWidth: 1,
-            padding: 10,
-            cornerRadius: 10,
+            backgroundColor: isDark ? "rgba(21, 26, 33, 0.96)" : "rgba(255, 255, 255, 0.98)",
+            titleColor: isDark ? "#F5F7FA" : "#172033",
+            bodyColor: isDark ? "#A7B0BE" : "#667085",
+            borderColor: isDark ? "rgba(255, 255, 255, 0.10)" : "#E3E8F0",
+            borderWidth: 0.5,
+            padding: 9,
+            cornerRadius: 8,
+            boxPadding: 4,
+            usePointStyle: true,
+            titleFont: { size: 12, weight: "600" },
+            bodyFont: { size: 11.5 },
           },
         },
         scales: {
-          x: { grid: { color: gridColor, drawOnChartArea: true }, ticks: { color: textColor, maxTicksLimit: 8 } },
-          y: { grid: { display: false }, ticks: { color: textColor }, beginAtZero: true },
+          x: { grid: { color: gridColor, borderDash: [3, 3], drawBorder: false }, ticks: { color: textColor, maxTicksLimit: 7, font: { size: 11 } } },
+          y: { grid: { color: gridColor, borderDash: [3, 3], drawBorder: false }, ticks: { color: textColor, maxTicksLimit: 5, font: { size: 11 }, callback: (v) => fmtNum(v) }, beginAtZero: true },
         },
       },
     });
 
+    // 2. Latency Chart
     const latCtx = latCanvas.getContext("2d");
+    const p50Grad = createGradient(latCtx, isDark ? "rgba(45, 212, 191, 0.16)" : "rgba(15, 175, 154, 0.10)", "rgba(15, 175, 154, 0.0)", 220);
+
     _latChart = new window.Chart(latCtx, {
       type: "line",
       data: {
         labels,
         datasets: [
           {
-            label: "p50 (ms)",
+            label: "p50 (Median)",
             data: points.map((p) => p.p50),
-            borderColor: isDark ? "#4ADE80" : "#22B573",
-            backgroundColor: "transparent",
-            stepped: "before",
-            borderWidth: 2,
-            pointRadius: labels.length > 60 ? 0 : 2,
+            borderColor: accentTeal,
+            backgroundColor: p50Grad,
+            borderWidth: 1.85,
+            tension: 0.35,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: accentTeal,
+            pointHoverBorderColor: "#FFFFFF",
+            pointHoverBorderWidth: 2,
           },
           {
-            label: "p95 (ms)",
+            label: "p95 (Tail)",
             data: points.map((p) => p.p95),
-            borderColor: accentPink,
+            borderColor: accentBlue,
             backgroundColor: "transparent",
-            stepped: "before",
-            borderWidth: 2,
-            pointRadius: labels.length > 60 ? 0 : 2,
+            borderWidth: 1.75,
+            tension: 0.35,
+            fill: false,
+            borderDash: [4, 3],
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: accentBlue,
+            pointHoverBorderColor: "#FFFFFF",
+            pointHoverBorderWidth: 2,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
         plugins: {
-          legend: { labels: { color: textColor, font: { size: 12, family: "-apple-system, sans-serif" } } },
+          legend: {
+            position: "top",
+            align: "end",
+            labels: {
+              boxWidth: 7,
+              boxHeight: 7,
+              usePointStyle: true,
+              pointStyle: "circle",
+              color: textColor,
+              font: { size: 12, family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif", weight: "500" },
+              padding: 12,
+            },
+          },
           tooltip: {
-            mode: "index",
-            intersect: false,
-            backgroundColor: isDark ? "#17181C" : "#FFFFFF",
-            titleColor: isDark ? "#F3F4F6" : "#0B0B0F",
-            bodyColor: isDark ? "#D1D5DB" : "#374151",
-            borderColor: isDark ? "#23242A" : "#ECECEE",
-            borderWidth: 1,
-            padding: 10,
-            cornerRadius: 10,
+            backgroundColor: isDark ? "rgba(17, 24, 39, 0.96)" : "rgba(255, 255, 255, 0.98)",
+            titleColor: isDark ? "#F9FAFB" : "#172033",
+            bodyColor: isDark ? "#D1D5DB" : "#667085",
+            borderColor: isDark ? "#374151" : "#E3E8F0",
+            borderWidth: 0.5,
+            padding: 9,
+            cornerRadius: 8,
+            boxPadding: 4,
+            usePointStyle: true,
+            titleFont: { size: 12, weight: "600" },
+            bodyFont: { size: 11.5 },
+            callbacks: {
+              label: (ctx) => ` ${ctx.dataset.label}: ${ctx.raw} ms`,
+            },
           },
         },
         scales: {
-          x: { grid: { color: gridColor, drawOnChartArea: true }, ticks: { color: textColor, maxTicksLimit: 6 } },
-          y: { grid: { display: false }, ticks: { color: textColor }, beginAtZero: true },
+          x: { grid: { color: gridColor, borderDash: [3, 3], drawBorder: false }, ticks: { color: textColor, maxTicksLimit: 6, font: { size: 11 } } },
+          y: { grid: { color: gridColor, borderDash: [3, 3], drawBorder: false }, ticks: { color: textColor, maxTicksLimit: 5, font: { size: 11 }, callback: (v) => `${v} ms` }, beginAtZero: true },
         },
       },
     });

@@ -379,7 +379,10 @@ export function fmtMs(val) {
 }
 export function fmtPct(val) {
   if (val === null || val === undefined) return "—";
-  return `${(val * 100).toFixed(1)} %`;
+  const num = Number(val);
+  if (isNaN(num)) return "—";
+  const clamped = Math.max(0, Math.min(100, num));
+  return `${clamped.toFixed(2)}%`;
 }
 export function fmtNum(val) {
   if (val === null || val === undefined) return "—";
