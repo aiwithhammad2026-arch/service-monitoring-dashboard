@@ -245,6 +245,20 @@ uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 
 Access the dashboard at **`http://127.0.0.1:8000/`**.
 
+### Option C: Deploying to Vercel (Serverless)
+
+The project is pre-configured with `vercel.json` and `api/index.py` for one-click Vercel deployment.
+
+```bash
+# 1. Install Vercel CLI (optional)
+npm install -g vercel
+
+# 2. Deploy from root directory
+vercel
+```
+
+On Vercel, the application automatically initializes in `/tmp/monitoring.db` and runs migrations + seeds initial telemetry on cold-start.
+
 ---
 
 ## Demo Credentials & Access Control
