@@ -5,11 +5,20 @@
 [![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57.svg?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Vanilla JS](https://img.shields.io/badge/Frontend-Vanilla_ES_Modules-F7DF1E.svg?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
 [![Coverage](https://img.shields.io/badge/Coverage-93%25-brightgreen.svg?style=flat)](https://pytest.org)
+[![Vercel Deployment](https://img.shields.io/badge/Deployment-Vercel_Live-000000.svg?style=flat&logo=vercel&logoColor=white)](https://service-monitoring-dashboard-sigma.vercel.app/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A production-style operations monitoring dashboard built with **FastAPI**, **SQLite** (WAL mode), and **Vanilla JavaScript** (native ES modules and CSS design tokens). Delivers real-time service health tracking, deterministic telemetry simulation, automated incident lifecycle management, and security audit logging across three platform products: **Website**, **App**, and **Admin Console**.
 
+> 🚀 **Live Demo Instance:** **[https://service-monitoring-dashboard-sigma.vercel.app/](https://service-monitoring-dashboard-sigma.vercel.app/)**
+>
+> | Role | Username | Password | Access Level |
+> | :--- | :--- | :--- | :--- |
+> | **Viewer** | `viewer` | `Viewer#2026!` | Read-only telemetry, KPIs, charts, CSV exports |
+> | **Admin** | `admin` | `Admin#2026!` | Simulator controls, incident actions, audit logs |
+
 ---
+
 
 ## Visual Showcase (Full Platform Walkthrough)
 
@@ -378,5 +387,7 @@ python -m scripts.check_docs
 
 - **Hammad** — AI Engineer & Developer • [aiwithhammad2026@gmail.com](mailto:aiwithhammad2026@gmail.com)
 - **Maaz Ali** — Full-Stack Engineer & Deployment Lead • [maazzalii11@gmail.com](mailto:maazzalii11@gmail.com)
+- **Live Demo:** [https://service-monitoring-dashboard-sigma.vercel.app/](https://service-monitoring-dashboard-sigma.vercel.app/)
 - **Repository:** [aiwithhammad2026-arch/service-monitoring-dashboard](https://github.com/aiwithhammad2026-arch/service-monitoring-dashboard)
+
 
