@@ -374,8 +374,9 @@ python -m scripts.check_docs
 
 ---
 
-## Author & Maintainer
+## Authors & Maintainers
 
-- **Developer:** Hammad (AI Engineer & Developer)
-- **Email:** [aiwithhammad2026@gmail.com](mailto:aiwithhammad2026@gmail.com)
+- **Hammad** — AI Engineer & Developer • [aiwithhammad2026@gmail.com](mailto:aiwithhammad2026@gmail.com)
+- **Maaz Ali** — Full-Stack Engineer & Deployment Lead • [maazzalii11@gmail.com](mailto:maazzalii11@gmail.com)
 - **Repository:** [aiwithhammad2026-arch/service-monitoring-dashboard](https://github.com/aiwithhammad2026-arch/service-monitoring-dashboard)
+
