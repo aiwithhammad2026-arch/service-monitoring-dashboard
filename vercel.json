@@ -36,9 +36,14 @@
       "dest": "/frontend/favicon.ico"
     },
     {
+      "src": "^/_vercel/(.*)$",
+      "dest": "/_vercel/$1"
+    },
+    {
       "src": "^/(.*)$",
       "dest": "/frontend/index.html"
     }
   ]
 }
+
 
