@@ -27,12 +27,15 @@ logger = logging.getLogger("api.index")
 try:
     run_migrations()
     with get_db() as conn:
-        row = conn.execute("SELECT COUNT(*) FROM services;").fetchone()
-        count = row[0] if row else 0
-        if count == 0:
+        svc_row = conn.execute("SELECT COUNT(*) FROM services;").fetchone()
+        audit_row = conn.execute("SELECT COUNT(*) FROM audit_log;").fetchone()
+        svc_count = svc_row[0] if svc_row else 0
+        audit_count = audit_row[0] if audit_row else 0
+        if svc_count == 0 or audit_count == 0:
             seed()
 except Exception as exc:
     logger.warning("Cold-start migration/seed warning: %s", exc)
+
 
 # Export ASGI app instance configured for Serverless (use_lifespan=False)
 app = create_app(use_lifespan=False)
