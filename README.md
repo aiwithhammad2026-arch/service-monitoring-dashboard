@@ -11,96 +11,138 @@ A production-style operations monitoring dashboard built with **FastAPI**, **SQL
 
 ---
 
-## Visual Showcase (Light & Dark Themes)
+## Visual Showcase (Full Platform Walkthrough)
 
 ### 1. Operations Dashboard Overview
-Comprehensive telemetry view featuring active/registered synthetic users, sliding 15m window tracking, continuous request throughput (RPM), and latency percentiles (p50, p95).
+Real-time KPI metric tiles, active/registered user tracking (15-minute sliding window), continuous request throughput (RPM), and latency percentiles (p50, p95).
 
-| Light Mode | Dark Mode |
-|---|---|
-| ![Light Dashboard](assets/light-03-dashboard-overview-all.png) | ![Dark Dashboard](assets/dark-03-dashboard-overview-all.png) |
+#### ☀️ Light Mode
+![Dashboard Overview - Light Mode](assets/light-03-dashboard-overview-all.png)
+
+#### 🌙 Dark Mode
+![Dashboard Overview - Dark Mode](assets/dark-03-dashboard-overview-all.png)
 
 ---
 
-### 2. Multi-Product & Time-Range Filtering
-Instant live telemetry segmentation across **Website**, **App**, and **Admin Console** with dynamic range aggregation (15m, 1h, 6h, 24h).
+### 2. Multi-Product & Range Segmentation
+Instant telemetry filtering across platform product tiers (**Website**, **App**, **Admin Console**) and customizable aggregation windows (15m, 1h, 6h, 24h).
 
-| Product / Filter | Light Mode | Dark Mode |
-|---|---|---|
-| **Website Platform** | ![Light Website Tab](assets/light-04-dashboard-website.png) | ![Dark Website Tab](assets/dark-04-dashboard-website.png) |
-| **Mobile App Core** | ![Light App Tab](assets/light-05-dashboard-app.png) | ![Dark App Tab](assets/dark-05-dashboard-app.png) |
-| **Admin Console API** | ![Light Admin Tab](assets/light-06-dashboard-admin.png) | ![Dark Admin Tab](assets/dark-06-dashboard-admin.png) |
-| **24-Hour Continuous Telemetry** | ![Light 24h Range](assets/light-07-dashboard-range-24h.png) | ![Dark 24h Range](assets/dark-07-dashboard-range-24h.png) |
+#### ☀️ Light Mode — Website Platform
+![Dashboard Website - Light Mode](assets/light-04-dashboard-website.png)
+
+#### 🌙 Dark Mode — Website Platform
+![Dashboard Website - Dark Mode](assets/dark-04-dashboard-website.png)
+
+#### ☀️ Light Mode — 24-Hour Continuous Telemetry
+![Dashboard 24h - Light Mode](assets/light-07-dashboard-range-24h.png)
+
+#### 🌙 Dark Mode — 24-Hour Continuous Telemetry
+![Dashboard 24h - Dark Mode](assets/dark-07-dashboard-range-24h.png)
 
 ---
 
 ### 3. Monitored Services Catalog & Health Matrix
-Live status evaluation across all 10 microservices with health badges (`Healthy`, `Slow`, `Failing`, `Stale`), error percentages, and instant search filtering.
+Live status evaluation across all 10 microservices with health indicators (`Healthy`, `Slow`, `Failing`, `Stale`), error rates, and instant keyword search filtering.
 
-| View State | Light Mode | Dark Mode |
-|---|---|---|
-| **All Services Fleet** | ![Light Services](assets/light-08-services-catalog.png) | ![Dark Services](assets/dark-08-services-catalog.png) |
-| **Filtered Search** | ![Light Services Filtered](assets/light-09-services-filtered.png) | ![Dark Services Filtered](assets/dark-09-services-filtered.png) |
+#### ☀️ Light Mode — Fleet Catalog
+![Services Catalog - Light Mode](assets/light-08-services-catalog.png)
+
+#### 🌙 Dark Mode — Fleet Catalog
+![Services Catalog - Dark Mode](assets/dark-08-services-catalog.png)
+
+#### ☀️ Light Mode — Search & Status Filtering
+![Services Filtered - Light Mode](assets/light-09-services-filtered.png)
+
+#### 🌙 Dark Mode — Search & Status Filtering
+![Services Filtered - Dark Mode](assets/dark-09-services-filtered.png)
 
 ---
 
 ### 4. Service Deep Dive & Alert Threshold Management
-Detailed minute-by-minute percentile analysis, error distribution, threshold rationale tuning (`max_error_pct`, `max_p95_ms`), and immediate audit logging.
+Detailed minute-by-minute percentile analysis, error breakdown, threshold tuning (`max_error_pct`, `max_p95_ms`), and immediate audit logging.
 
-| View State | Light Mode | Dark Mode |
-|---|---|---|
-| **Service Telemetry & Insights** | ![Light Service Detail](assets/light-10-service-detail-payments.png) | ![Dark Service Detail](assets/dark-10-service-detail-payments.png) |
-| **Threshold Tuning Form** | ![Light Threshold Edit](assets/light-11-service-threshold-edit.png) | ![Dark Threshold Edit](assets/dark-11-service-threshold-edit.png) |
+#### ☀️ Light Mode — Service Telemetry & Charts
+![Service Detail - Light Mode](assets/light-10-service-detail-payments.png)
+
+#### 🌙 Dark Mode — Service Telemetry & Charts
+![Service Detail - Dark Mode](assets/dark-10-service-detail-payments.png)
+
+#### ☀️ Light Mode — Threshold Tuning Form
+![Service Threshold Form - Light Mode](assets/light-11-service-threshold-edit.png)
+
+#### 🌙 Dark Mode — Threshold Tuning Form
+![Service Threshold Form - Dark Mode](assets/dark-11-service-threshold-edit.png)
 
 ---
 
-### 5. Deterministic Chaos Simulator Control Center
-Administrative chaos injection engine with per-service failure modes (`normal`, `slow`, `failing`, `recovering`), zero-traffic bucket pauses, and reporting blackout toggles.
+### 5. Deterministic Chaos Simulator & Traffic Engine
+Live background telemetry generator with configurable chaos modes (`normal`, `slow`, `failing`, `recovering`), zero-traffic bucket pauses, and reporting blackout toggles.
 
-| View State | Light Mode | Dark Mode |
-|---|---|---|
-| **Simulator Control Fleet** | ![Light Simulator Controls](assets/light-12-simulator-controls.png) | ![Dark Simulator Controls](assets/dark-12-simulator-controls.png) |
-| **Active Chaos Simulation** | ![Light Chaos Active](assets/light-13-simulator-chaos-active.png) | ![Dark Chaos Active](assets/dark-13-simulator-chaos-active.png) |
+#### ☀️ Light Mode — Simulator Fleet Controls
+![Simulator Controls - Light Mode](assets/light-12-simulator-controls.png)
+
+#### 🌙 Dark Mode — Simulator Fleet Controls
+![Simulator Controls - Dark Mode](assets/dark-12-simulator-controls.png)
+
+#### ☀️ Light Mode — Active Chaos Modes Triggered
+![Simulator Chaos Active - Light Mode](assets/light-13-simulator-chaos-active.png)
+
+#### 🌙 Dark Mode — Active Chaos Modes Triggered
+![Simulator Chaos Active - Dark Mode](assets/dark-13-simulator-chaos-active.png)
 
 ---
 
 ### 6. Automated Incident Lifecycle Management
 Automated streak evaluation state machine (`open` $\rightarrow$ `acknowledged` $\rightarrow$ `recovered` $\rightarrow$ `resolved`) with chronological timeline event auditing.
 
-| View State | Light Mode | Dark Mode |
-|---|---|---|
-| **Active Incidents Queue** | ![Light Incidents Overview](assets/light-14-incidents-overview.png) | ![Dark Incidents Overview](assets/dark-14-incidents-overview.png) |
-| **Incident Timeline & Audit Modal** | ![Light Incident Timeline](assets/light-15-incident-detail-timeline.png) | ![Dark Incident Timeline](assets/dark-15-incident-detail-timeline.png) |
+#### ☀️ Light Mode — Active Incidents Queue
+![Incidents Overview - Light Mode](assets/light-14-incidents-overview.png)
+
+#### 🌙 Dark Mode — Active Incidents Queue
+![Incidents Overview - Dark Mode](assets/dark-14-incidents-overview.png)
+
+#### ☀️ Light Mode — Incident Detail Timeline & Audit Modal
+![Incident Detail Modal - Light Mode](assets/light-15-incident-detail-timeline.png)
+
+#### 🌙 Dark Mode — Incident Detail Timeline & Audit Modal
+![Incident Detail Modal - Dark Mode](assets/dark-15-incident-detail-timeline.png)
 
 ---
 
-### 7. Security Audit Trail & Access Control
+### 7. Security Audit Trail & Authentication Portal
 Immutable audit log recording every administrative action, parameter change, and chaos trigger with recursive credential redaction and actor attribution.
 
-| View State | Light Mode | Dark Mode |
-|---|---|---|
-| **Security Audit Trail** | ![Light Audit Trail](assets/light-16-audit-trail.png) | ![Dark Audit Trail](assets/dark-16-audit-trail.png) |
-| **Authentication Portal** | ![Light Login](assets/light-01-login.png) | ![Dark Login](assets/dark-01-login.png) |
+#### ☀️ Light Mode — Formatted Security Audit Trail
+![Audit Trail - Light Mode](assets/light-16-audit-trail.png)
+
+#### 🌙 Dark Mode — Formatted Security Audit Trail
+![Audit Trail - Dark Mode](assets/dark-16-audit-trail.png)
+
+#### ☀️ Light Mode — Authentication Portal
+![Login View - Light Mode](assets/light-01-login.png)
+
+#### 🌙 Dark Mode — Authentication Portal
+![Login View - Dark Mode](assets/dark-01-login.png)
 
 ---
 
 ## Architecture Overview
 
 ```mermaid
-graph TD
+flowchart TD
     Client["Browser (Vanilla JS ES Modules + CSS Tokens)"]
-    API["FastAPI App (Uvicorn)"]
+    API["FastAPI Backend (Uvicorn)"]
     Auth["Auth & RBAC (Signed Cookies + bcrypt)"]
     MetricsEngine["Metrics Engine (Fixed-Edge Histograms)"]
     IncidentEngine["Incident State Machine (Streak Evaluation)"]
     Simulator["Deterministic Simulator (Async Loop)"]
     DB[("SQLite Database (WAL Mode)")]
 
-    Client <-->|REST API + Polling (10s)| API
+    Client <-->|"REST API + Polling (10s)"| API
     API --> Auth
     API --> MetricsEngine
     API --> IncidentEngine
-    Simulator -->|tick / evaluate (5s)| DB
+    Simulator -->|"Tick / Evaluate (5s)"| DB
     MetricsEngine <--> DB
     IncidentEngine <--> DB
     Auth <--> DB
@@ -153,10 +195,10 @@ service-monitoring-dashboard/
 │   ├── vendor/
 │   │   └── chart.umd.js     # Locally vendored chart bundle (no external CDN)
 │   └── index.html           # Single-page application entrypoint
-├── docs/                    # Architectural documentation, assumptions, limitations, review guide, demo script
-├── scripts/                 # Helper & demo scripts (check_docs.py, sim_demo.py, verify_api_live.py, capture_with_playwright.py, capture_full_suite.py)
+├── docs/                    # Architectural documentation, assumptions, test report, review guide, demo script
+├── scripts/                 # Helper & demo scripts (check_docs.py, sim_demo.py, verify_api_live.py, capture_full_suite.py)
 ├── tests/                   # Automated pytest suite (test_docs.py, test_metrics.py, test_status.py, test_api.py, etc.)
-├── assets/                  # High-resolution dashboard screenshots and visual assets
+├── assets/                  # High-resolution dashboard screenshots in Light & Dark modes
 ├── pyproject.toml           # Project metadata, dependencies, ruff, and pytest configurations
 └── uv.lock                  # Deterministic dependency lockfile
 ```
@@ -266,7 +308,7 @@ All API responses use JSON and require an authenticated session cookie unless ma
 ## Metric Definitions & Formulas
 
 1. **Registered Users:** Total count of synthetic user records in `app_users` for the selected product.
-2. **Active Users:** Count of users in `app_users` whose `last_seen_at >= now - MD_ACTIVE_WINDOW_M` (15 minutes).
+2. **Active Users:** Count of users in `app_users` whose `last_seen_at >= now - MD_ACTIVE_USER_WINDOW_M` (15 minutes).
 3. **Requests Per Minute (RPM):**
    $$\text{RPM} = \frac{\sum \text{Requests in Window}}{\text{Total Minutes in Window}}$$
 4. **Success Percentage:**
@@ -287,14 +329,14 @@ All API responses use JSON and require an authenticated session cookie unless ma
 The health status engine evaluates each service over a trailing 3-minute window with strict precedence rules:
 
 ```mermaid
-graph TD
+flowchart TD
     Start["Evaluate Service Metrics (Trailing 3m)"] --> CheckStale{"No buckets OR newest bucket > stale_after_s OR requests == 0?"}
-    CheckStale -- Yes --> Stale["STALE / NO DATA (Gray)"]
-    CheckStale -- No --> CheckFailing{"Error Rate > max_error_pct?"}
-    CheckFailing -- Yes --> Failing["FAILING (Red)"]
-    CheckFailing -- No --> CheckSlow{"p95 Latency > max_p95_ms?"}
-    CheckSlow -- Yes --> Slow["SLOW (Amber/Red)"]
-    CheckSlow -- No --> Healthy["HEALTHY (Green)"]
+    CheckStale -->|"Yes"| Stale["STALE / NO DATA (Gray)"]
+    CheckStale -->|"No"| CheckFailing{"Error Rate > max_error_pct?"}
+    CheckFailing -->|"Yes"| Failing["FAILING (Red)"]
+    CheckFailing -->|"No"| CheckSlow{"p95 Latency > max_p95_ms?"}
+    CheckSlow -->|"Yes"| Slow["SLOW (Amber/Red)"]
+    CheckSlow -->|"No"| Healthy["HEALTHY (Green)"]
 ```
 
 ---
@@ -302,6 +344,8 @@ graph TD
 ## Testing & Quality Assurance
 
 The repository includes a comprehensive automated test suite with **133 tests** covering unit, integration, security, and documentation integrity.
+
+- 📄 Read the complete [Automated Test & QA Report](docs/test-report.md) for module-by-module results and coverage metrics.
 
 ```bash
 # Run full test suite with backend coverage
