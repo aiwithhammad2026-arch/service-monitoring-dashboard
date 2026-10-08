@@ -15,8 +15,9 @@
 
 2. **Maaz Ali**
    - **Role:** Full-Stack Engineer & Deployment Lead
-   - **Email:** `maazzalii11@gmail.com`
+   - **Email:** `maazalisshahid@gmail.com`
    - **Focus:** Full-Stack Architecture, Bug Resolution, Test Automation Suite (133/133 tests), UI/UX Polish, and Vercel Serverless Integration.
+
 
 ---
 
