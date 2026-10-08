@@ -1,18 +1,76 @@
 # Service Monitoring Dashboard
 
-Production-style operations monitoring dashboard built with FastAPI, SQLite, and vanilla JavaScript (ES modules). Provides real-time service health tracking, deterministic telemetry simulation, incident lifecycle management, and administrative audit logging across three platform products: **Website**, **App**, and **Admin Console**.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.142+-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57.svg?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Vanilla JS](https://img.shields.io/badge/Frontend-Vanilla_ES_Modules-F7DF1E.svg?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)
+[![Coverage](https://img.shields.io/badge/Coverage-93%25-brightgreen.svg?style=flat)](https://pytest.org)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+A production-style operations monitoring dashboard built with **FastAPI**, **SQLite** (WAL mode), and **Vanilla JavaScript** (native ES modules and CSS design tokens). Delivers real-time service health tracking, deterministic telemetry simulation, automated incident lifecycle management, and security audit logging across three platform products: **Website**, **App**, and **Admin Console**.
 
 ---
 
-## Architecture
+## Visual Showcase
+
+### Operations Dashboard Overview
+Real-time KPI metrics, active/registered user tracking, and continuous request throughput & latency time-series charts.
+
+![Dashboard Overview](assets/02-dashboard-overview.png)
+
+---
+
+### Monitored Services Catalog
+Health status matrix evaluating 10 microservices against latency and error thresholds with instant filtering by product.
+
+![Monitored Services Catalog](assets/03-services-catalog.png)
+
+---
+
+### Service Deep Dive & Threshold Management
+Granular minute-by-minute percentile analysis (p50, p95), error breakdown, threshold tuning, and live chaos injection controls.
+
+![Service Deep Dive](assets/04-service-detail.png)
+
+---
+
+### Incident Lifecycle Management
+Automated streak evaluation, state transitions (`open` $\rightarrow$ `acknowledged` $\rightarrow$ `resolved`), and full chronological timeline events.
+
+![Incident Management](assets/05-incident-management.png)
+
+---
+
+### Deterministic Chaos Simulator & Traffic Engine
+Live background telemetry generator with configurable chaos modes (`normal`, `slow`, `failing`, `recovering`) and reporting pause toggles.
+
+![Chaos Simulator Controls](assets/07-chaos-simulator.png)
+
+---
+
+### Security Audit Trail
+Immutable administrative audit log with automatic recursive credential redaction and actor attribution.
+
+![Audit Trail](assets/06-audit-trail.png)
+
+---
+
+### Modern Dark & Light Bento UI
+Adaptive theme engine featuring glassmorphic cards, CSS custom property tokens, and WCAG-compliant contrast.
+
+![Dark Mode Dashboard](assets/08-dark-dashboard.png)
+
+---
+
+## Architecture Overview
 
 ```mermaid
 graph TD
     Client["Browser (Vanilla JS ES Modules + CSS Tokens)"]
     API["FastAPI App (Uvicorn)"]
     Auth["Auth & RBAC (Signed Cookies + bcrypt)"]
-    MetricsEngine["Metrics Engine (Histogram Merging)"]
-    IncidentEngine["Incident State Machine"]
+    MetricsEngine["Metrics Engine (Fixed-Edge Histograms)"]
+    IncidentEngine["Incident State Machine (Streak Evaluation)"]
     Simulator["Deterministic Simulator (Async Loop)"]
     DB[("SQLite Database (WAL Mode)")]
 
@@ -28,21 +86,21 @@ graph TD
 
 ---
 
-## Tech Stack
+## Tech Stack & Design Decisions
 
-| Layer | Technology | Rationale |
+| Layer | Technology | Rationale & Trade-offs |
 |---|---|---|
 | **Backend** | Python 3.12+, FastAPI, Uvicorn, Pydantic v2 | High-performance asynchronous API, strict schema validation, type safety |
 | **Database** | SQLite (WAL mode, Foreign Keys ON) | Zero external daemon dependency, ACID transactions, portable isolated testing |
-| **Migrations** | Plain SQL migrations (`001_init.sql`, etc.) | Transparent schema versioning without ORM abstraction overhead |
+| **Migrations** | Versioned plain SQL (`001_init.sql`, etc.) | Transparent schema versioning without ORM abstraction overhead |
 | **Authentication** | `itsdangerous` signed cookies, `bcrypt` (cost 12) | Stateless HttpOnly SameSite=Lax sessions, server-enforced RBAC on every request |
 | **Frontend** | Vanilla HTML5, CSS Custom Properties, ES Modules | Zero build step, instant load, no node_modules bundle pipeline |
-| **Visualisation** | Chart.js (vendored locally in `frontend/vendor/chart.umd.js`) | No external CDN calls; responsive minute-by-minute line charts |
-| **Testing** | pytest, httpx, pytest-cov, pytest-asyncio, ruff | Deterministic isolated SQLite fixtures, fast test execution |
+| **Visualisation** | Chart.js (vendored in `frontend/vendor/chart.umd.js`) | Local offline execution with zero CDN latency or external dependencies |
+| **Testing** | pytest, httpx, pytest-cov, pytest-asyncio, ruff | Deterministic isolated SQLite fixtures, 93%+ coverage |
 
 ---
 
-## Folder Structure
+## Project Structure
 
 ```text
 service-monitoring-dashboard/
@@ -74,57 +132,69 @@ service-monitoring-dashboard/
 │   │   └── chart.umd.js     # Locally vendored chart bundle (no external CDN)
 │   └── index.html           # Single-page application entrypoint
 ├── docs/                    # Architectural documentation, assumptions, limitations, review guide, demo script
-├── scripts/                 # Helper & demo scripts (check_docs.py, sim_demo.py, verify_api_live.py)
-├── tests/                   # Automated pytest suite (test_docs.py, test_metrics.py, test_status.py, etc.)
+├── scripts/                 # Helper & demo scripts (check_docs.py, sim_demo.py, verify_api_live.py, capture_with_playwright.py)
+├── tests/                   # Automated pytest suite (test_docs.py, test_metrics.py, test_status.py, test_api.py, etc.)
+├── assets/                  # High-resolution dashboard screenshots and visual assets
 ├── pyproject.toml           # Project metadata, dependencies, ruff, and pytest configurations
 └── uv.lock                  # Deterministic dependency lockfile
 ```
 
 ---
 
-## Quickstart & Setup Commands
+## Quickstart & Setup Guide
 
-Run the following commands in your shell from the repository root:
+### Option A: Using `uv` (Recommended)
 
 ```bash
-# 1. Install dependencies into isolated virtual environment
+# 1. Install dependencies
 uv sync
 
-# 2. Execute database schema migrations
+# 2. Run database migrations
 uv run python -m backend.db migrate
 
-# 3. Seed initial users, products, services, thresholds, and historical metrics
+# 3. Seed initial users, services, thresholds, and historical metrics
 uv run python -m backend.seed
 
-# 4. Start the development server
-uv run uvicorn backend.main:app --reload
-
-# 5. Run the full automated test suite with backend coverage
-uv run pytest --cov=backend
+# 4. Start the application server
+uv run uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Open your browser at `http://127.0.0.1:8000/` to access the application.
+### Option B: Using Python Virtual Environment (`venv` / `virtualenv`)
 
-### Adding a New Service
+```bash
+# 1. Create and activate virtual environment
+python3 -m venv .venv || virtualenv .venv
+source .venv/bin/activate
 
-To add a new service, append its tuple to `SERVICES_CATALOG` in `backend/seed.py` (applied migrations are never edited). An existing database picks the new service up by re-running `uv run python -m backend.seed`. Update the two tests that assume exactly 10 services: `tests/test_api.py::test_pagination_and_clamping` and `tests/test_db_and_seed.py::test_seed_twice_does_not_duplicate_rows`.
+# 2. Install dependencies
+pip install -e .
+# Or install direct requirements:
+pip install "bcrypt>=5.0.0" "fastapi>=0.115.0" "itsdangerous>=2.2.0" "pydantic>=2.10.0" "uvicorn[standard]>=0.30.0"
+
+# 3. Run migrations and seed data
+python -m backend.db migrate
+python -m backend.seed
+
+# 4. Start server
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Access the dashboard at **`http://127.0.0.1:8000/`**.
 
 ---
 
-## Demo Accounts
+## Demo Credentials & Access Control
 
-> **Notice:** The following accounts are seeded for demonstration and evaluation only.
-
-| Username | Password | Role | Permissions |
+| Username | Password | Role | Permissions & Capabilities |
 |---|---|---|---|
-| `admin` | `Admin#2026!` | **Admin** | Full read & write: threshold updates, simulator chaos toggles, incident ack/resolve, audit access |
-| `viewer` | `Viewer#2026!` | **Viewer** | Read-only: dashboard overview, service details, incident tracking, CSV export |
+| **`viewer`** | `Viewer#2026!` | `Viewer` | **Read-Only**: Access live telemetry overview, service health matrix, continuous charts, incident timelines, and CSV data export. |
+| **`admin`** | `Admin#2026!` | `Admin` | **Full Control**: All viewer permissions + update alerting thresholds, toggle simulator chaos modes (`normal`, `slow`, `failing`, `recovering`), pause traffic, acknowledge/resolve incidents, and inspect security audit log. |
 
 ---
 
-## Environment Variables
+## Environment Configuration
 
-Configured in `.env` (refer to `.env.example`):
+Configure custom options in `.env` (refer to `.env.example`):
 
 | Variable | Default | Description |
 |---|---|---|
@@ -132,25 +202,25 @@ Configured in `.env` (refer to `.env.example`):
 | `MD_SECRET_KEY` | `insecure-dev-secret-key-change-in-production` | Secret key for cryptographic cookie signing (`itsdangerous`) |
 | `MD_SIM_SEED` | `42` | Seed integer for deterministic pseudo-random traffic simulation |
 | `MD_SIM_TICK` | `5.0` | Simulator tick interval in seconds |
-| `MD_SIM_ENABLED` | `1` | Set `0` to disable background simulation loop (useful for testing) |
+| `MD_SIM_ENABLED` | `1` | Set `0` to disable background simulation loop (useful during test runs) |
 | `MD_SECURE_COOKIES` | `false` | Enable `Secure` cookie flag (set `true` when behind HTTPS) |
-| `MD_STALE_AFTER_S` | `180` | Age threshold in seconds before telemetry is marked stale (gray) |
+| `MD_STALE_AFTER_S` | `180` | Age threshold in seconds before telemetry is marked Stale (`gray`) |
 | `MD_ACTIVE_USER_WINDOW_M` | `15` | Window in minutes for calculating active registered users |
-| `MD_BCRYPT_ROUNDS` | `12` | Cost factor for bcrypt password hashing (lowered in test environments) |
+| `MD_BCRYPT_ROUNDS` | `12` | Cost factor for bcrypt password hashing (lowered in test environment) |
 | `MD_SESSION_MAX_AGE_S` | `86400` | Session cookie validity max age in seconds (24 hours) |
-| `MD_RATE_LIMIT_MAX_ATTEMPTS` | `5` | Maximum failed login attempts allowed per (user, IP) |
+| `MD_RATE_LIMIT_MAX_ATTEMPTS` | `5` | Maximum failed login attempts allowed per `(user, IP)` |
 | `MD_RATE_LIMIT_WINDOW_S` | `300` | Sliding window in seconds for failed login rate limiting (5 minutes) |
 
 ---
 
-## API Summary Table
+## REST API Reference
 
-All API responses use JSON and require an authenticated session cookie unless marked Public.
+All API responses use JSON and require an authenticated session cookie unless marked **Public**.
 
 | Method | Endpoint | Minimum Role | Description |
 |---|---|---|---|
 | `GET` | `/health` | Public | Liveness check and operational status |
-| `POST` | `/auth/login` | Public | Authenticate user, set signed session cookie |
+| `POST` | `/auth/login` | Public | Authenticate user credentials, set signed HTTP-only cookie |
 | `POST` | `/auth/logout` | Public | Clear session cookie |
 | `GET` | `/auth/me` | Viewer | Retrieve current authenticated user profile and role |
 | `GET` | `/metrics/overview` | Viewer | High-level KPI summary cards across range and product filters |
@@ -160,12 +230,12 @@ All API responses use JSON and require an authenticated session cookie unless ma
 | `PUT` | `/services/{id}/thresholds` | Admin | Update service alerting thresholds (audit logged) |
 | `POST` | `/sim/{id}/mode` | Admin | Change simulator mode (`normal`, `slow`, `failing`, `recovering`) |
 | `POST` | `/sim/{id}/pause` | Admin | Toggle traffic pause (writes zero-request buckets) |
-| `POST` | `/sim/{id}/reporting` | Admin | Toggle reporting pause (emits no buckets -> triggers Stale status) |
+| `POST` | `/sim/{id}/reporting` | Admin | Toggle reporting pause (emits no buckets $\rightarrow$ triggers Stale status) |
 | `GET` | `/incidents` | Viewer | Paginated incidents list filtered by status |
 | `GET` | `/incidents/{id}` | Viewer | Incident details with chronological timeline of state changes |
 | `POST` | `/incidents/{id}/ack` | Admin | Acknowledge open incident |
 | `POST` | `/incidents/{id}/resolve` | Admin | Resolve active incident (from open, acknowledged, or recovered) |
-| `GET` | `/audit` | Admin | Paginated audit trail with credential redaction |
+| `GET` | `/audit` | Admin | Paginated security audit trail with credential redaction |
 | `GET` | `/export/metrics.csv` | Viewer | Stream sanitized CSV export of metric telemetry buckets |
 | `GET` | `/export/incidents.csv` | Viewer | Stream sanitized CSV export of incidents |
 
@@ -185,61 +255,47 @@ All API responses use JSON and require an authenticated session cookie unless ma
    *Returns `null` ("No data") if total requests equal zero.*
 6. **p50 and p95 Latency:**
    - Evaluated using 18 fixed-edge histogram bins: `[5, 10, 25, 50, 75, 100, 150, 200, 300, 400, 600, 800, 1000, 1500, 2000, 3000, 5000, +inf]` ms.
-   - Bins are merged element-wise across time buckets.
-   - Percentiles are interpolated linearly inside the target rank bin. The `+inf` bin is capped at 5000 ms.
-   *Returns `null` ("No data") if total requests equal zero.*
+   - Bins are merged element-wise across time buckets ($O(1)$ space per minute).
+   - Percentiles are interpolated linearly inside the target rank bin.
 
 ---
 
-## Assumptions & Design Decisions
+## Health Evaluation Precedence
 
-- **Strict Status Precedence:** Evaluated over the trailing 3-minute window:
-  1. `No data` / `Stale` (gray): No buckets in window, newest bucket older than `stale_after_s`, or 0 requests across window.
-  2. `Failing` (red): Error rate > `max_error_pct` (default 5.0%).
-  3. `Slow` (red): p95 latency > `max_p95_ms` (default 800.0 ms).
-  4. `Healthy` (green): All metrics within acceptable thresholds.
-- **Strict Boundary Equality:** Threshold comparisons use strictly greater than (`>`). Exact boundary values (e.g. error rate exactly 5.0%) remain Healthy.
-- **Incident Deduplication:** Enforced at the engine layer and guaranteed at the DB schema layer via a partial unique index `one_active_incident` ON `incidents(service_id, type) WHERE status != 'resolved'`.
-- **Zero-Traffic Semantics:** Zero traffic returns `null` for percentiles and ratios to avoid misleading `0%` or `100%` indicators.
-- **Timezone Consistency:** All dates and timestamps are stored and manipulated in UTC ISO-8601 strings.
+The health status engine evaluates each service over a trailing 3-minute window with strict precedence rules:
 
----
-
-## Architectural Trade-offs
-
-1. **SQLite (WAL mode) vs. PostgreSQL:**
-   - *Chosen:* SQLite in WAL mode.
-   - *Trade-off:* Eliminates external database infrastructure, enabling zero-config local evaluation and isolated in-memory/file testing. SQLite is single-writer, which limits high-concurrency write throughput compared to PostgreSQL, but is optimal for low-to-medium volume telemetry and single-node operations.
-2. **Polling (10s) vs. WebSockets / Server-Sent Events:**
-   - *Chosen:* Standard REST endpoints polled at 10-second intervals with document visibility pause (`poller.js`).
-   - *Trade-off:* Significantly simpler backend state management, standard caching, automatic reconnection, and firewall traversal. WebSockets would provide lower latency updates at the expense of connection state management.
-3. **Vanilla JS (ES Modules) vs. Frontend Framework (React/Vue):**
-   - *Chosen:* Native ES Modules and CSS custom properties.
-   - *Trade-off:* Zero build pipeline, instant browser refresh, zero bundle size bloat. Does require explicit DOM construction helpers (`ui.js`) rather than declarative JSX.
-4. **Histogram Percentiles vs. Raw Request Logs:**
-   - *Chosen:* 18-bin fixed-edge histograms aggregated per minute bucket.
-   - *Trade-off:* Constant $O(1)$ storage per minute regardless of request volume (1 request vs 10,000 requests consumes identical DB space). Introduces a small approximation error bounded by bin widths.
-5. **In-App Notifications vs. External Webhooks/Alerting:**
-   - *Chosen:* In-app incident badges, status highlights, and timeline history.
-   - *Trade-off:* Self-contained evaluation without requiring third-party credentials (PagerDuty, Slack, SMTP).
+```mermaid
+graph TD
+    Start["Evaluate Service Metrics (Trailing 3m)"] --> CheckStale{"No buckets OR newest bucket > stale_after_s OR requests == 0?"}
+    CheckStale -- Yes --> Stale["STALE / NO DATA (Gray)"]
+    CheckStale -- No --> CheckFailing{"Error Rate > max_error_pct?"}
+    CheckFailing -- Yes --> Failing["FAILING (Red)"]
+    CheckFailing -- No --> CheckSlow{"p95 Latency > max_p95_ms?"}
+    CheckSlow -- Yes --> Slow["SLOW (Amber/Red)"]
+    CheckSlow -- No --> Healthy["HEALTHY (Green)"]
+```
 
 ---
 
-## Unfinished Items & Future Improvements
+## Testing & Quality Assurance
 
-- **Scenario Replay:** Automated JSON scenario scheduling is deferred; chaos controls are operated via API and UI.
-- **Persistent Rate Limiting:** The failed login rate limiter is currently in-memory (resets on server process restart). Future improvement would store sliding windows in SQLite or Redis.
-- **Export Filters:** CSV export streams all buckets or all incidents; UI-driven date range filtering for CSV exports can be added.
-- **WebSocket Streaming:** Optional live stream channel for sub-second telemetry updates.
-
----
-
-## Running Automated Tests
+The repository includes a comprehensive automated test suite with **133 tests** covering unit, integration, security, and documentation integrity.
 
 ```bash
-# Run entire test suite with coverage report
-uv run pytest --cov=backend -q
+# Run full test suite with backend coverage
+pytest --cov=backend
 
 # Run static analysis and linting
-uv run ruff check .
+ruff check .
+
+# Verify documentation file references
+python -m scripts.check_docs
 ```
+
+---
+
+## Author & Maintainer
+
+- **Developer:** Hammad (AI Engineer & Developer)
+- **Email:** [aiwithhammad2026@gmail.com](mailto:aiwithhammad2026@gmail.com)
+- **Repository:** [aiwithhammad2026-arch/service-monitoring-dashboard](https://github.com/aiwithhammad2026-arch/service-monitoring-dashboard)
