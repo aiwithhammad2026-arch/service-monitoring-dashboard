@@ -382,15 +382,12 @@ export function renderLogin(presetError = "") {
   const loginCredit = document.createElement("div");
   loginCredit.className = "login-footer-credit";
   const builtText = document.createTextNode("Built by ");
-  const hammadSpan = document.createElement("strong");
-  hammadSpan.textContent = "Hammad";
-  const andText = document.createTextNode(" & ");
-  const maazSpan = document.createElement("strong");
-  maazSpan.textContent = "Maaz Ali";
+  const authorSpan = document.createElement("strong");
+  authorSpan.textContent = "Hammad";
+  const roleText = document.createTextNode(" • AI Engineer & Developer");
   loginCredit.appendChild(builtText);
-  loginCredit.appendChild(hammadSpan);
-  loginCredit.appendChild(andText);
-  loginCredit.appendChild(maazSpan);
+  loginCredit.appendChild(authorSpan);
+  loginCredit.appendChild(roleText);
   card.appendChild(loginCredit);
 
   loginWrap.appendChild(card);
@@ -470,52 +467,33 @@ function _showAboutModal() {
   devBox.style.border = "0.5px solid var(--border)";
   devBox.style.display = "flex";
   devBox.style.flexDirection = "column";
-  devBox.style.gap = "8px";
+  devBox.style.gap = "4px";
 
   const devHeader = document.createElement("div");
   devHeader.className = "text-xs text-muted uppercase font-bold";
   devHeader.style.letterSpacing = "0.04em";
   devHeader.textContent = "Product & Engineering";
 
-  // Hammad entry
-  const hammadBox = document.createElement("div");
-  hammadBox.className = "flex flex-col gap-1";
-  const hammadName = document.createElement("div");
-  hammadName.className = "font-bold text-primary";
-  hammadName.textContent = "Hammad";
-  const hammadRole = document.createElement("div");
-  hammadRole.className = "text-xs text-muted";
-  hammadRole.textContent = "AI Engineer & Developer";
-  const hammadMail = document.createElement("a");
-  hammadMail.className = "footer-link text-xs";
-  hammadMail.href = "mailto:aiwithhammad2026@gmail.com";
-  hammadMail.textContent = "aiwithhammad2026@gmail.com";
-  hammadBox.appendChild(hammadName);
-  hammadBox.appendChild(hammadRole);
-  hammadBox.appendChild(hammadMail);
+  const devName = document.createElement("div");
+  devName.className = "font-bold text-primary";
+  devName.style.fontSize = "15px";
+  devName.textContent = "Built by Hammad";
 
-  // Maaz Ali entry
-  const maazBox = document.createElement("div");
-  maazBox.className = "flex flex-col gap-1 pt-2";
-  maazBox.style.borderTop = "0.5px solid var(--border)";
-  const maazName = document.createElement("div");
-  maazName.className = "font-bold text-primary";
-  maazName.textContent = "Maaz Ali";
-  const maazRole = document.createElement("div");
-  maazRole.className = "text-xs text-muted";
-  maazRole.textContent = "Full-Stack Engineer & Deployment Lead";
-  const maazMail = document.createElement("a");
-  maazMail.className = "footer-link text-xs";
-  maazMail.href = "mailto:maazzalii11@gmail.com";
-  maazMail.textContent = "maazzalii11@gmail.com";
-  maazBox.appendChild(maazName);
-  maazBox.appendChild(maazRole);
-  maazBox.appendChild(maazMail);
+  const devRole = document.createElement("div");
+  devRole.className = "text-sm text-muted";
+  devRole.textContent = "AI Engineer & Developer";
+
+  const devMail = document.createElement("a");
+  devMail.className = "footer-link text-sm";
+  devMail.href = "mailto:aiwithhammad2026@gmail.com";
+  devMail.textContent = "aiwithhammad2026@gmail.com";
 
   devBox.appendChild(devHeader);
-  devBox.appendChild(hammadBox);
-  devBox.appendChild(maazBox);
+  devBox.appendChild(devName);
+  devBox.appendChild(devRole);
+  devBox.appendChild(devMail);
   body.appendChild(devBox);
+
 
 
   const footer = document.createElement("button");
